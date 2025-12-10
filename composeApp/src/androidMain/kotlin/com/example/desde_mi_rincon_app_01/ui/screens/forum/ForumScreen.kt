@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Send
@@ -46,7 +47,12 @@ val emotionsList = listOf(
     EmotionItem("En Paz", "🕊️", Color(0xFFDBEAFE)),      // Blue-100
     EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF)),      // Indigo-100
     // NUEVA EMOCIÓN AGREGADA
-    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)) // Purple-100
+    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)), // Purple-100
+    // NUEVAS EMOCIONES
+    EmotionItem("Eufórico", "🎉", Color(0xFFFCE7F3)),     // Pink-100
+    EmotionItem("Nostálgico", "📜", Color(0xFFFEF3C7)),   // Amber-100
+    EmotionItem("Determinado", "💪", Color(0xFFD1FAE5)),  // Emerald-100
+    EmotionItem("Asombrado", "🤯", Color(0xFFFEF3C7))     // Yellow-100 (alternativa: 0xFFFFF7ED para Orange-50)
 
 )
 
@@ -130,7 +136,7 @@ fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
 @Composable
 fun ForumWriteScreen(
     emotionName: String,
-    onBack: () -> Unit,
+    onBack: () -> Unit, // Esta función es la que nos devuelve a la pantalla anterior
     viewModel: ForumViewModel = viewModel()
 ) {
     // ELIMINADO: LaunchedEffect(Unit) { viewModel.listenToAllPosts() }
@@ -139,9 +145,44 @@ fun ForumWriteScreen(
     var messageText by remember { mutableStateOf("") }
     var authorName by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf("text") }
-    val status by viewModel.status.collectAsState()
+
+    // Observamos los estados del ViewModel
+    val status by viewModel.status.collectAsState() // Para errores
+    val showSuccessDialog by viewModel.showSuccessDialog.collectAsState() // Para éxito
 
     val emotionColor = emotionsList.find { it.name == emotionName }?.color ?: Color.White
+
+    // --- LÓGICA DEL DIÁLOGO (POP-UP) ---
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // Opcional: Qué pasa si tocan fuera (lo dejamos vacío para obligar a usar el botón)
+            },
+            icon = {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF0D9488))
+            },
+            title = {
+                Text(text = "¡Emoción Liberada!", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text("Gracias por compartir tu sentir. Tu mensaje ha sido entregado a la comunidad y ahora pesa un poco menos.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.dismissSuccessDialog() // 1. Reseteamos el estado
+                        onBack() // 2. REDIRECCIÓN: Volvemos a la pantalla anterior
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+    // ------------------------------------
 
     Scaffold(
         topBar = {
@@ -207,13 +248,13 @@ fun ForumWriteScreen(
                 singleLine = true
             )
 
-            // BOTÓN ENVIAR (Igual)
+            // BOTÓN ENVIAR
             Button(
                 onClick = {
                     val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
                     viewModel.sendPost(emotionName, finalMsg, authorName)
-                    messageText = ""
-                    // Opcional: Podrías llamar a onBack() aquí para volver tras enviar
+                    // Nota: Ya no limpiamos el texto aquí manualmente,
+                    // porque al salir de la pantalla se destruye el estado.
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
@@ -224,11 +265,13 @@ fun ForumWriteScreen(
                 Text("Liberar Emoción")
             }
 
+            // SOLO MOSTRAR STATUS SI ES ERROR (Texto rojo)
             status?.let {
                 Text(
                     text = it,
-                    color = if(it.contains("Error")) Color.Red else Color(0xFF0D9488),
-                    modifier = Modifier.padding(top=8.dp)
+                    color = Color.Red, // Solo para errores
+                    modifier = Modifier.padding(top=8.dp),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 

@@ -12,7 +12,11 @@ import kotlinx.coroutines.launch
 class ForumViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
-    private val _status = MutableStateFlow<String?>(null) // Para mostrar mensajes de "Enviado" o error
+    // Mantenemos _status para ERRORES (texto rojo), pero usamos este nuevo booleano para el ÉXITO
+    private val _showSuccessDialog = MutableStateFlow(false)
+    val showSuccessDialog: StateFlow<Boolean> = _showSuccessDialog
+
+    private val _status = MutableStateFlow<String?>(null)
 
     // NUEVO: Estado para la lista de posts
     private val _posts = MutableStateFlow<List<ForumPost>>(emptyList())
@@ -32,7 +36,6 @@ class ForumViewModel : ViewModel() {
             return
         }
 
-        // Si el nombre está vacío, elegimos uno al azar
         val finalAuthor = if (inputName.isBlank()) randomNames.random() else inputName
 
         val newPost = ForumPost(
@@ -42,16 +45,25 @@ class ForumViewModel : ViewModel() {
         )
 
         viewModelScope.launch {
-            _status.value = "Enviando..."
+            // Limpiamos estados previos
+            _status.value = null
+
             db.collection("posts")
                 .add(newPost)
                 .addOnSuccessListener {
-                    _status.value = "¡Mensaje compartido con éxito!"
+                    // AQUÍ ESTÁ EL CAMBIO:
+                    // En lugar de poner un texto, activamos la "bandera" del diálogo
+                    _showSuccessDialog.value = true
                 }
                 .addOnFailureListener {
                     _status.value = "Error al enviar: ${it.localizedMessage}"
                 }
         }
+    }
+
+    // Función para resetear la bandera cuando cerramos el diálogo
+    fun dismissSuccessDialog() {
+        _showSuccessDialog.value = false
     }
 
     // Función para escuchar mensajes en tiempo real
