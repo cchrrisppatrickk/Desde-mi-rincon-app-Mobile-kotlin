@@ -93,5 +93,8 @@ dependencies {
     // --- HERRAMIENTAS DE DEBUG ---
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+
+    implementation("com.google.firebase:firebase-storage-ktx:21.0.0") // O la versión que estés usando
 }
 

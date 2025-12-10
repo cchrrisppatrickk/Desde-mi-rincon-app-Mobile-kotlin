@@ -9,11 +9,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.desde_mi_rincon_app_01.navigation.AppScreen
+import com.example.desde_mi_rincon_app_01.ui.screens.capsules.CapsulesScreen
+import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumSelectionScreen
+import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumWriteScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.home.HomeScreen
 
 @Composable
@@ -67,14 +72,41 @@ fun App() {
         }
     ) { innerPadding ->
         // Aquí ocurre la "magia" de cambiar pantallas
+        // En App.kt
+
         NavHost(
             navController = navController,
             startDestination = AppScreen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(AppScreen.Home.route) { HomeScreen() } // <--- Llamada a tu nueva pantalla real}
-            composable(AppScreen.Forum.route) { PlaceholderScreen("Foro: ¿Cómo está tu corazón?") }
-            composable(AppScreen.Capsules.route) { PlaceholderScreen("Cápsulas de Bienestar") }
+            // --- ESTO ES LO QUE FALTABA ---
+            composable(AppScreen.Home.route) {
+                HomeScreen() // Asegúrate de importar tu HomeScreen creado anteriormente
+            }
+            // -----------------------------
+
+            composable(AppScreen.Forum.route) {
+                ForumSelectionScreen(
+                    onEmotionSelected = { emotion ->
+                        navController.navigate(AppScreen.ForumWrite.createRoute(emotion))
+                    }
+                )
+            }
+
+            composable(
+                route = AppScreen.ForumWrite.route,
+                arguments = listOf(navArgument("emotion") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val emotion = backStackEntry.arguments?.getString("emotion") ?: "General"
+                ForumWriteScreen(
+                    emotionName = emotion,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(AppScreen.Capsules.route) {
+                CapsulesScreen()
+            }
             composable(AppScreen.Weekly.route) { PlaceholderScreen("Rincón Semanal") }
             composable(AppScreen.Challenges.route) { PlaceholderScreen("Retos Culturales y Ruleta") }
         }
