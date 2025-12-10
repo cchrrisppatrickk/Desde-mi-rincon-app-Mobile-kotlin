@@ -20,6 +20,7 @@ import com.example.desde_mi_rincon_app_01.navigation.AppScreen
 import com.example.desde_mi_rincon_app_01.ui.components.ChatBotOverlay
 import com.example.desde_mi_rincon_app_01.ui.screens.capsules.CapsulesScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.challenges.ChallengesScreen
+import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumFeedScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumSelectionScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumWriteScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.home.HomeScreen
@@ -92,11 +93,37 @@ fun App() {
                 }
                 // -----------------------------
 
+                // 1. PANTALLA DE SELECCIÓN (FORO)
                 composable(AppScreen.Forum.route) {
                     ForumSelectionScreen(
                         onEmotionSelected = { emotion ->
                             navController.navigate(AppScreen.ForumWrite.createRoute(emotion))
+                        },
+                        onGoToFeed = {
+                            navController.navigate(AppScreen.CommunityFeed.route)
                         }
+                    )
+                }
+
+                // 2. NUEVA PANTALLA: FEED DE COMUNIDAD
+                composable(AppScreen.CommunityFeed.route) {
+                    ForumFeedScreen(
+                        onShareFeeling = {
+                            // Volvemos atrás (a la selección) para que elija emoción
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                // 3. PANTALLA DE ESCRITURA (FORMULARIO)
+                composable(
+                    route = AppScreen.ForumWrite.route,
+                    arguments = listOf(navArgument("emotion") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val emotion = backStackEntry.arguments?.getString("emotion") ?: "General"
+                    ForumWriteScreen(
+                        emotionName = emotion,
+                        onBack = { navController.popBackStack() }
                     )
                 }
 

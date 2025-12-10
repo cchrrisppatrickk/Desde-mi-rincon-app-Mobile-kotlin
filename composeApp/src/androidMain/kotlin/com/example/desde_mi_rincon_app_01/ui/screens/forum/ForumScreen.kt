@@ -9,9 +9,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,47 +44,57 @@ val emotionsList = listOf(
     EmotionItem("Esperanzado", "🌻", Color(0xFFFEF9C3)), // Yellow-100
     EmotionItem("Frustrado", "😤", Color(0xFFFEE2E2)),   // Red-100
     EmotionItem("En Paz", "🕊️", Color(0xFFDBEAFE)),      // Blue-100
-    EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF))       // Indigo-100
+    EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF)),      // Indigo-100
+    // NUEVA EMOCIÓN AGREGADA
+    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)) // Purple-100
+
 )
 
 // --- PANTALLA 1: SELECCIÓN DE EMOCIÓN ---
 @Composable
-fun ForumSelectionScreen(onEmotionSelected: (String) -> Unit) {
+fun ForumSelectionScreen(
+    onEmotionSelected: (String) -> Unit,
+    onGoToFeed: () -> Unit // Nuevo callback
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "¿Cómo está tu corazón hoy?",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF334155), // Slate-700
+            color = Color(0xFF334155),
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // ... (Texto auxiliar) ...
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "Selecciona una emoción para entrar al foro.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Grid de Cajetillas
+        // Grid de emociones (ocupa el peso disponible pero deja espacio al botón final)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2), // 2 columnas
+            columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.weight(1f) // Importante para que el botón quede abajo
         ) {
             items(emotionsList) { emotion ->
-                EmotionCard(emotion) {
-                    onEmotionSelected(emotion.name)
-                }
+                EmotionCard(emotion) { onEmotionSelected(emotion.name) }
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // --- NUEVO BOTÓN: VER MENSAJES ---
+        Button(
+            onClick = onGoToFeed,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)), // Slate Dark
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.List, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Ver mensajes de la comunidad")
         }
     }
 }
@@ -111,35 +126,27 @@ fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
 }
 
 // --- PANTALLA 2: FORMULARIO DE ESCRITURA ---
-@OptIn(ExperimentalMaterial3Api::class) // <--- AGREGA ESTA LÍNEA AQUÍ
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForumWriteScreen(
     emotionName: String,
     onBack: () -> Unit,
     viewModel: ForumViewModel = viewModel()
 ) {
-    // 1. Cargamos los posts al entrar a la pantalla
-    //Update:
-    // MODIFICACIÓN: Cambiamos 'emotionName' por 'Unit' para que cargue solo una vez
-    // y llamamos a la nueva función sin parámetros.
-    LaunchedEffect(Unit) {
-        viewModel.listenToAllPosts()
-    }
+    // ELIMINADO: LaunchedEffect(Unit) { viewModel.listenToAllPosts() }
 
     // Estados del formulario
     var messageText by remember { mutableStateOf("") }
     var authorName by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf("text") }
-
     val status by viewModel.status.collectAsState()
-    val posts by viewModel.posts.collectAsState() // <--- Lista de mensajes en vivo
 
     val emotionColor = emotionsList.find { it.name == emotionName }?.color ?: Color.White
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Foro: $emotionName") },
+                title = { Text("Desahogo: $emotionName") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -149,110 +156,135 @@ fun ForumWriteScreen(
             )
         }
     ) { padding ->
-        // USAMOS LAZYCOLUMN PARA TODA LA PANTALLA
-        LazyColumn(
+        // Usamos Column con verticalScroll en lugar de LazyColumn porque ya no es una lista infinita
+        Column(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(24.dp), // Margen general
-            verticalArrangement = Arrangement.spacedBy(16.dp) // Espacio entre elementos
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()), // Habilita scroll si el teclado tapa
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                text = "Este es tu espacio seguro.",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.DarkGray
+            )
 
-            // --- BLOQUE 1: EL FORMULARIO (Header) ---
-            item {
-                Text(
-                    text = "Comparte tu sentir con la comunidad",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.DarkGray
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+            // TABS (Igual que antes)
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                TabButton("Escribir Mensaje", selectedTab == "text") { selectedTab = "text" }
+                Spacer(modifier = Modifier.width(16.dp))
+                TabButton("Dibujar", selectedTab == "draw") { selectedTab = "draw" }
+            }
 
-                // TABS
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    TabButton("Escribir Mensaje", selectedTab == "text") { selectedTab = "text" }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    TabButton("Dibujar", selectedTab == "draw") { selectedTab = "draw" }
-                }
-
-                // INPUT AREA
-                if (selectedTab == "text") {
-                    OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        label = { Text("Escribe tu mensaje aquí...") },
-                        modifier = Modifier.fillMaxWidth().height(150.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-                            .clip(RoundedCornerShape(12.dp))
-                    ) {
-                        DrawingCanvas() // Tu componente optimizado
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // CAMPO NOMBRE
+            // INPUT AREA (Igual que antes)
+            if (selectedTab == "text") {
                 OutlinedTextField(
-                    value = authorName,
-                    onValueChange = { authorName = it },
-                    label = { Text("Tu nombre (Opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // BOTÓN ENVIAR
-                Button(
-                    onClick = {
-                        val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
-                        viewModel.sendPost(emotionName, finalMsg, authorName)
-                        messageText = "" // Limpiamos el campo tras enviar
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    label = { Text("Escribe tu mensaje aquí...") },
+                    modifier = Modifier.fillMaxWidth().height(200.dp), // Un poco más alto ahora que hay espacio
                     shape = RoundedCornerShape(12.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp))
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Compartir")
+                    DrawingCanvas()
                 }
+            }
 
-                status?.let {
-                    Text(text = it, color = Color(0xFF0D9488), modifier = Modifier.padding(top=8.dp))
-                }
+            // CAMPO NOMBRE (Igual)
+            OutlinedTextField(
+                value = authorName,
+                onValueChange = { authorName = it },
+                label = { Text("Tu nombre (Opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
-                // SEPARADOR VISUAL
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
+            // BOTÓN ENVIAR (Igual)
+            Button(
+                onClick = {
+                    val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
+                    viewModel.sendPost(emotionName, finalMsg, authorName)
+                    messageText = ""
+                    // Opcional: Podrías llamar a onBack() aquí para volver tras enviar
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Send, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Liberar Emoción")
+            }
 
+            status?.let {
                 Text(
-                    text = "Mensajes de la Comunidad",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF334155)
+                    text = it,
+                    color = if(it.contains("Error")) Color.Red else Color(0xFF0D9488),
+                    modifier = Modifier.padding(top=8.dp)
                 )
             }
 
-            // --- BLOQUE 2: LA LISTA DE MENSAJES (Feed) ---
+            // ELIMINADO: Todo el bloque de "Mensajes de la Comunidad"
+        }
+    }
+}
+
+@Composable
+fun ForumFeedScreen(
+    onShareFeeling: () -> Unit, // Callback para volver a los botones
+    viewModel: ForumViewModel = viewModel()
+) {
+    // Cargamos todos los mensajes
+    LaunchedEffect(Unit) {
+        viewModel.listenToAllPosts()
+    }
+
+    val posts by viewModel.posts.collectAsState()
+
+    Scaffold(
+        floatingActionButton = {
+            // Botón flotante para incitar a escribir
+            ExtendedFloatingActionButton(
+                onClick = onShareFeeling,
+                containerColor = Color(0xFF0D9488), // Teal
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Create, null) },
+                text = { Text("Comparte tu sentir") }
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+
+            // Header
+            Text(
+                text = "Comunidad",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF334155),
+                modifier = Modifier.padding(24.dp)
+            )
+
+            // Lista de Mensajes
             if (posts.isEmpty()) {
-                item {
-                    Text(
-                        text = "Sé el primero en compartir algo aquí...",
-                        fontStyle = FontStyle.Italic,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(vertical = 24.dp)
-                    )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF0D9488))
                 }
             } else {
-                items(posts) { post ->
-                    PostItem(post)
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 80.dp, start = 16.dp, end = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(posts) { post ->
+                        PostItem(post) // Usamos el componente que ya creaste
+                    }
                 }
             }
         }
