@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,7 +18,9 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -365,59 +368,154 @@ fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 // COMPONENTE PARA CADA MENSAJE (TARJETA)
 @Composable
 fun PostItem(post: ForumPost) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+    ElevatedCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp) // Pequeño margen vertical extra
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp) // Buen padding interno
+                .fillMaxWidth()
+        ) {
+            // --- HEADER: Avatar + Nombre + Fecha + Opción ---
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // 1. Avatar con iniciales
+                UserAvatar(name = post.author)
 
-            // --- NUEVO: Etiqueta de la Emoción ---
-            Surface(
-                color = getEmotionColor(post.emotion), // Función auxiliar abajo
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text(
-                    text = post.emotion,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    color = Color.DarkGray
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // 2. Info Autor
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = post.author.ifBlank { "Anónimo" },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B) // Slate-800
+                    )
+                    Text(
+                        text = "Hace un momento", // Aquí iría tu lógica de tiempo real
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF94A3B8), // Slate-400
+                        fontSize = 11.sp
+                    )
+                }
+
+                // 3. Icono de "Más opciones" (decorativo por ahora)
+                Icon(
+                    imageVector = Icons.Default.MoreHoriz,
+                    contentDescription = "Opciones",
+                    tint = Color(0xFFCBD5E1) // Slate-300
                 )
             }
-            // --------------------------------------
-
-            // Contenido del mensaje
-            Text(
-                text = post.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF1E293B)
-            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Pie de tarjeta: Autor y Fecha
+            // --- BODY: El Mensaje ---
+            Text(
+                text = post.message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF334155), // Slate-700
+                lineHeight = 20.sp, // Mejor lectura
+                modifier = Modifier.padding(start = 2.dp) // Alineación óptica sutil
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- FOOTER: Badge de Emoción + Acción ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = post.author,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D9488)
-                )
+                // Chip de Emoción (Estilo Píldora)
+                EmotionChip(emotionName = post.emotion)
 
-                Text(
-                    text = "Hace un momento", // Aquí podrías formatear post.timestamp
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray
-                )
+                // Botón de "Me gusta" (Visual)
+                IconButton(
+                    onClick = { /* Lógica futura de like */ },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "Apoyar",
+                        tint = Color(0xFF94A3B8) // Gris suave (Heart)
+                    )
+                }
             }
         }
     }
 }
+
+// --- COMPONENTES AUXILIARES ---
+
+@Composable
+fun UserAvatar(name: String) {
+    val initials = name.take(1).uppercase()
+    // Generamos un color pastel aleatorio consistente basado en el nombre
+    val colorIndex = name.hashCode().absoluteValue % 5
+    val avatarColors = listOf(
+        Color(0xFFE0F2FE), // Sky
+        Color(0xFFDCFCE7), // Green
+        Color(0xFFFAE8FF), // Purple
+        Color(0xFFFEE2E2), // Red
+        Color(0xFFFEF3C7)  // Amber
+    )
+    val textColor = Color(0xFF475569) // Slate-600
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(avatarColors[colorIndex])
+    ) {
+        Text(
+            text = initials,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            fontSize = 16.sp
+        )
+    }
+}
+
+@Composable
+fun EmotionChip(emotionName: String) {
+    // Obtenemos el color base de tu lista existente
+    val baseColor = getEmotionColor(emotionName)
+
+    Surface(
+        color = baseColor,
+        shape = RoundedCornerShape(50), // Completamente redondeado
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+            // Pequeño punto decorativo (dot)
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.2f))
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = emotionName,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF334155) // Slate-700
+            )
+        }
+    }
+}
+
+// Necesario para el cálculo del color aleatorio
+private val Int.absoluteValue: Int
+    get() = if (this < 0) -this else this
 
 // Función auxiliar simple para dar color al badge según el texto de la emoción
 // Puedes ponerla al final de tu archivo ForumScreen.kt
