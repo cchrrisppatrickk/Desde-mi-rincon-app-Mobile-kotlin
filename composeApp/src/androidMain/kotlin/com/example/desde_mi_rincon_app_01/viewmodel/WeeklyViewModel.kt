@@ -45,4 +45,7 @@ class WeeklyViewModel : ViewModel() {
             message = "A mis compañeros voluntarios: No endurezcan su corazón para protegerse. Un corazón blando es valiente, pero necesita descanso."
         )
     }
+
+
+
 }
