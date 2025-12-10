@@ -20,6 +20,7 @@ import com.example.desde_mi_rincon_app_01.ui.screens.capsules.CapsulesScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumSelectionScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumWriteScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.home.HomeScreen
+import com.example.desde_mi_rincon_app_01.ui.screens.weekly.WeeklyScreen
 
 @Composable
 fun App() {
@@ -107,7 +108,9 @@ fun App() {
             composable(AppScreen.Capsules.route) {
                 CapsulesScreen()
             }
-            composable(AppScreen.Weekly.route) { PlaceholderScreen("Rincón Semanal") }
+            composable(AppScreen.Weekly.route) {
+                WeeklyScreen()
+            }
             composable(AppScreen.Challenges.route) { PlaceholderScreen("Retos Culturales y Ruleta") }
         }
     }

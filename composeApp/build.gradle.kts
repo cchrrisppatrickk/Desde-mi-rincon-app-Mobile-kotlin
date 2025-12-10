@@ -96,5 +96,7 @@ dependencies {
 
 
     implementation("com.google.firebase:firebase-storage-ktx:21.0.0") // O la versión que estés usando
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
 
