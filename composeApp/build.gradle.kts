@@ -98,5 +98,19 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx:21.0.0") // O la versión que estés usando
 
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // 1. IMPORTANTE: Iconos Extendidos
+    // (Necesario para Icons.Outlined.Brush, Icons.Outlined.Edit, etc.)
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+
+    // 2. ViewModel para Compose
+    // (Necesario para la función: viewModel() dentro de los Composables)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+
+    // 3. Navegación
+    // (Para el NavHost y pasar argumentos entre pantallas)
+    implementation("androidx.navigation:navigation-compose:2.7.6")
+
+    implementation("androidx.compose.animation:animation:1.10.0")
 }
 

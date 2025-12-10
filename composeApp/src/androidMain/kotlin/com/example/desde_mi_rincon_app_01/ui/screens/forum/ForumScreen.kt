@@ -1,69 +1,67 @@
 package com.example.desde_mi_rincon_app_01.ui.screens.forum
 
+// --- IMPORTS ---
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween // FIXED: Added import for tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Brush
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow // FIXED: standard shadow import
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.desde_mi_rincon_app_01.viewmodel.ForumViewModel
-
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontStyle
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.DrawingCanvas
+import com.example.desde_mi_rincon_app_01.viewmodel.ForumViewModel
+import kotlin.math.absoluteValue
 
-// --- DATOS DE LAS EMOCIONES (Configuración visual) ---
+// --- DATA ---
 data class EmotionItem(val name: String, val emoji: String, val color: Color)
 
 val emotionsList = listOf(
-    EmotionItem("Agotado", "😫", Color(0xFFE2E8F0)),     // Slate-200
-    EmotionItem("Esperanzado", "🌻", Color(0xFFFEF9C3)), // Yellow-100
-    EmotionItem("Frustrado", "😤", Color(0xFFFEE2E2)),   // Red-100
-    EmotionItem("En Paz", "🕊️", Color(0xFFDBEAFE)),      // Blue-100
-    EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF)),      // Indigo-100
-    // NUEVA EMOCIÓN AGREGADA
-    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)), // Purple-100
-    // NUEVAS EMOCIONES
-    EmotionItem("Eufórico", "🎉", Color(0xFFFCE7F3)),     // Pink-100
-    EmotionItem("Nostálgico", "📜", Color(0xFFFEF3C7)),   // Amber-100
-    EmotionItem("Determinado", "💪", Color(0xFFD1FAE5)),  // Emerald-100
-    EmotionItem("Asombrado", "🤯", Color(0xFFFEF3C7))     // Yellow-100 (alternativa: 0xFFFFF7ED para Orange-50)
-
+    EmotionItem("Agotado", "😫", Color(0xFFE2E8F0)),
+    EmotionItem("Esperanzado", "🌻", Color(0xFFFEF9C3)),
+    EmotionItem("Frustrado", "😤", Color(0xFFFEE2E2)),
+    EmotionItem("En Paz", "🕊️", Color(0xFFDBEAFE)),
+    EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF)),
+    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)),
+    EmotionItem("Eufórico", "🎉", Color(0xFFFCE7F3)),
+    EmotionItem("Nostálgico", "📜", Color(0xFFFEF3C7)),
+    EmotionItem("Determinado", "💪", Color(0xFFD1FAE5)),
+    EmotionItem("Asombrado", "🤯", Color(0xFFFFF7ED))
 )
 
-// --- PANTALLA 1: SELECCIÓN DE EMOCIÓN ---
+// --- SCREEN 1: SELECTION ---
 @Composable
 fun ForumSelectionScreen(
     onEmotionSelected: (String) -> Unit,
-    onGoToFeed: () -> Unit // Nuevo callback
+    onGoToFeed: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -77,15 +75,13 @@ fun ForumSelectionScreen(
             textAlign = TextAlign.Center
         )
 
-        // ... (Texto auxiliar) ...
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Grid de emociones (ocupa el peso disponible pero deja espacio al botón final)
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.weight(1f) // Importante para que el botón quede abajo
+            modifier = Modifier.weight(1f)
         ) {
             items(emotionsList) { emotion ->
                 EmotionCard(emotion) { onEmotionSelected(emotion.name) }
@@ -94,11 +90,10 @@ fun ForumSelectionScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- NUEVO BOTÓN: VER MENSAJES ---
         Button(
             onClick = onGoToFeed,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)), // Slate Dark
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
             shape = RoundedCornerShape(12.dp)
         ) {
             Icon(Icons.Default.List, contentDescription = null)
@@ -128,167 +123,18 @@ fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
             Text(
                 text = emotion.name,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF475569) // Slate-600
+                color = Color(0xFF475569)
             )
         }
     }
 }
 
-// --- PANTALLA 2: FORMULARIO DE ESCRITURA ---
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ForumWriteScreen(
-    emotionName: String,
-    onBack: () -> Unit, // Esta función es la que nos devuelve a la pantalla anterior
-    viewModel: ForumViewModel = viewModel()
-) {
-    // ELIMINADO: LaunchedEffect(Unit) { viewModel.listenToAllPosts() }
-
-    // Estados del formulario
-    var messageText by remember { mutableStateOf("") }
-    var authorName by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableStateOf("text") }
-
-    // Observamos los estados del ViewModel
-    val status by viewModel.status.collectAsState() // Para errores
-    val showSuccessDialog by viewModel.showSuccessDialog.collectAsState() // Para éxito
-
-    val emotionColor = emotionsList.find { it.name == emotionName }?.color ?: Color.White
-
-    // --- LÓGICA DEL DIÁLOGO (POP-UP) ---
-    if (showSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                // Opcional: Qué pasa si tocan fuera (lo dejamos vacío para obligar a usar el botón)
-            },
-            icon = {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF0D9488))
-            },
-            title = {
-                Text(text = "¡Emoción Liberada!", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text("Gracias por compartir tu sentir. Tu mensaje ha sido entregado a la comunidad y ahora pesa un poco menos.")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.dismissSuccessDialog() // 1. Reseteamos el estado
-                        onBack() // 2. REDIRECCIÓN: Volvemos a la pantalla anterior
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
-                ) {
-                    Text("Aceptar")
-                }
-            },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-    // ------------------------------------
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Desahogo: $emotionName") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = emotionColor)
-            )
-        }
-    ) { padding ->
-        // Usamos Column con verticalScroll en lugar de LazyColumn porque ya no es una lista infinita
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()), // Habilita scroll si el teclado tapa
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Este es tu espacio seguro.",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.DarkGray
-            )
-
-            // TABS (Igual que antes)
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                TabButton("Escribir Mensaje", selectedTab == "text") { selectedTab = "text" }
-                Spacer(modifier = Modifier.width(16.dp))
-                TabButton("Dibujar", selectedTab == "draw") { selectedTab = "draw" }
-            }
-
-            // INPUT AREA (Igual que antes)
-            if (selectedTab == "text") {
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    label = { Text("Escribe tu mensaje aquí...") },
-                    modifier = Modifier.fillMaxWidth().height(200.dp), // Un poco más alto ahora que hay espacio
-                    shape = RoundedCornerShape(12.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    DrawingCanvas()
-                }
-            }
-
-            // CAMPO NOMBRE (Igual)
-            OutlinedTextField(
-                value = authorName,
-                onValueChange = { authorName = it },
-                label = { Text("Tu nombre (Opcional)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            // BOTÓN ENVIAR
-            Button(
-                onClick = {
-                    val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
-                    viewModel.sendPost(emotionName, finalMsg, authorName)
-                    // Nota: Ya no limpiamos el texto aquí manualmente,
-                    // porque al salir de la pantalla se destruye el estado.
-                },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Send, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Liberar Emoción")
-            }
-
-            // SOLO MOSTRAR STATUS SI ES ERROR (Texto rojo)
-            status?.let {
-                Text(
-                    text = it,
-                    color = Color.Red, // Solo para errores
-                    modifier = Modifier.padding(top=8.dp),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            // ELIMINADO: Todo el bloque de "Mensajes de la Comunidad"
-        }
-    }
-}
-
+// --- SCREEN 2: FEED ---
 @Composable
 fun ForumFeedScreen(
-    onShareFeeling: () -> Unit, // Callback para volver a los botones
+    onShareFeeling: () -> Unit,
     viewModel: ForumViewModel = viewModel()
 ) {
-    // Cargamos todos los mensajes
     LaunchedEffect(Unit) {
         viewModel.listenToAllPosts()
     }
@@ -297,10 +143,9 @@ fun ForumFeedScreen(
 
     Scaffold(
         floatingActionButton = {
-            // Botón flotante para incitar a escribir
             ExtendedFloatingActionButton(
                 onClick = onShareFeeling,
-                containerColor = Color(0xFF0D9488), // Teal
+                containerColor = Color(0xFF0D9488),
                 contentColor = Color.White,
                 icon = { Icon(Icons.Default.Create, null) },
                 text = { Text("Comparte tu sentir") }
@@ -308,8 +153,6 @@ fun ForumFeedScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-
-            // Header
             Text(
                 text = "Comunidad",
                 style = MaterialTheme.typography.headlineMedium,
@@ -318,7 +161,6 @@ fun ForumFeedScreen(
                 modifier = Modifier.padding(24.dp)
             )
 
-            // Lista de Mensajes
             if (posts.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color(0xFF0D9488))
@@ -329,7 +171,7 @@ fun ForumFeedScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(posts) { post ->
-                        PostItem(post) // Usamos el componente que ya creaste
+                        PostItem(post)
                     }
                 }
             }
@@ -337,35 +179,286 @@ fun ForumFeedScreen(
     }
 }
 
-// Componente auxiliar para estilizar los botones de las pestañas
+// --- SCREEN 3: WRITE (FORM) ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .padding(bottom = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = text,
-            fontWeight = FontWeight.Bold,
-            color = if (isSelected) Color(0xFF0D9488) else Color.Gray
+fun ForumWriteScreen(
+    emotionName: String,
+    onBack: () -> Unit,
+    viewModel: ForumViewModel = viewModel()
+) {
+    var messageText by remember { mutableStateOf("") }
+    var authorName by remember { mutableStateOf("") }
+    var selectedTab by remember { mutableStateOf("text") }
+
+    val status by viewModel.status.collectAsState()
+    val showSuccessDialog by viewModel.showSuccessDialog.collectAsState()
+
+    val emotionColor = emotionsList.find { it.name == emotionName }?.color ?: Color(0xFFF1F5F9)
+    val accentColor = Color(0xFF0D9488)
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = { Icon(Icons.Default.CheckCircle, null, tint = accentColor, modifier = Modifier.size(48.dp)) },
+            title = { Text("¡Liberado!", fontWeight = FontWeight.Bold) },
+            text = { Text("Tu mensaje ha sido entregado al universo (y a la comunidad). Gracias por soltarlo.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.dismissSuccessDialog()
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                ) { Text("Volver") }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp)
         )
-        // La línea inferior animada (simulada)
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .height(2.dp)
-                    .width(40.dp) // Ancho fijo o dinámico
-                    .background(Color(0xFF0D9488))
+    }
+
+    Scaffold(
+        containerColor = Color(0xFFF8FAFC), // FIXED: Changed backgroundColor to containerColor
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Espacio de Desahogo",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = emotionName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
-        } else {
-            Spacer(modifier = Modifier.height(2.dp))
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ModeSelector(
+                selectedMode = selectedTab,
+                onModeSelected = { selectedTab = it },
+                accentColor = accentColor
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(accentColor)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if(selectedTab == "text") "Escribe lo que sientes..." else "Dibuja tu emoción...",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AnimatedVisibility(
+                        visible = selectedTab == "text",
+                        enter = fadeIn(tween(300)),
+                        exit = fadeOut(tween(300))
+                    ) {
+                        BasicTextField(
+                            value = messageText,
+                            onValueChange = { messageText = it },
+                            textStyle = TextStyle(
+                                fontSize = 18.sp,
+                                color = Color(0xFF334155),
+                                lineHeight = 28.sp
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 200.dp),
+                            decorationBox = { innerTextField ->
+                                if (messageText.isEmpty()) {
+                                    Text(
+                                        text = "Hoy me siento...",
+                                        color = Color.LightGray,
+                                        fontSize = 18.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                    }
+
+                    if (selectedTab == "draw") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF1F5F9))
+                        ) {
+                            DrawingCanvas()
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = Color.LightGray)
+                Spacer(modifier = Modifier.width(12.dp))
+                BasicTextField(
+                    value = authorName,
+                    onValueChange = { authorName = it },
+                    textStyle = TextStyle(fontSize = 16.sp, color = Color.DarkGray),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { innerTextField ->
+                        if (authorName.isEmpty()) {
+                            Text("Firma (Opcional)", color = Color.Gray)
+                        }
+                        innerTextField()
+                    },
+                    singleLine = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
+                    viewModel.sendPost(emotionName, finalMsg, authorName)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    // FIXED: Replaced custom shadow function with standard Modifier.shadow to avoid complexity errors
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp)),
+                colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Send, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Liberar Emoción",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            status?.let {
+                if (it.contains("Error")) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = it, color = Color.Red, fontSize = 12.sp)
+                }
+            }
         }
     }
 }
 
-// COMPONENTE PARA CADA MENSAJE (TARJETA)
+// --- COMPONENTS ---
+@Composable
+fun ModeSelector(
+    selectedMode: String,
+    onModeSelected: (String) -> Unit,
+    accentColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .background(Color(0xFFE2E8F0), RoundedCornerShape(50))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        ModeButton(
+            text = "Escribir",
+            icon = Icons.Outlined.Edit,
+            isSelected = selectedMode == "text",
+            onClick = { onModeSelected("text") },
+            activeColor = accentColor,
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        ModeButton(
+            text = "Dibujar",
+            icon = Icons.Outlined.Brush,
+            isSelected = selectedMode == "draw",
+            onClick = { onModeSelected("draw") },
+            activeColor = accentColor,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun ModeButton(
+    text: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    activeColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isSelected) Color.White else Color.Transparent
+    val contentColor = if (isSelected) activeColor else Color.Gray
+    val elevation = if (isSelected) 2.dp else 0.dp
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = backgroundColor,
+        shadowElevation = elevation,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = text,
+                color = contentColor,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
 @Composable
 fun PostItem(post: ForumPost) {
     ElevatedCard(
@@ -374,75 +467,59 @@ fun PostItem(post: ForumPost) {
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp) // Pequeño margen vertical extra
+            .padding(vertical = 4.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp) // Buen padding interno
+                .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // --- HEADER: Avatar + Nombre + Fecha + Opción ---
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 1. Avatar con iniciales
                 UserAvatar(name = post.author)
-
                 Spacer(modifier = Modifier.width(12.dp))
-
-                // 2. Info Autor
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = post.author.ifBlank { "Anónimo" },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B) // Slate-800
+                        color = Color(0xFF1E293B)
                     )
                     Text(
-                        text = "Hace un momento", // Aquí iría tu lógica de tiempo real
+                        text = "Hace un momento",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8), // Slate-400
+                        color = Color(0xFF94A3B8),
                         fontSize = 11.sp
                     )
                 }
-
-                // 3. Icono de "Más opciones" (decorativo por ahora)
                 Icon(
                     imageVector = Icons.Default.MoreHoriz,
                     contentDescription = "Opciones",
-                    tint = Color(0xFFCBD5E1) // Slate-300
+                    tint = Color(0xFFCBD5E1)
                 )
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            // --- BODY: El Mensaje ---
             Text(
                 text = post.message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF334155), // Slate-700
-                lineHeight = 20.sp, // Mejor lectura
-                modifier = Modifier.padding(start = 2.dp) // Alineación óptica sutil
+                color = Color(0xFF334155),
+                lineHeight = 20.sp,
+                modifier = Modifier.padding(start = 2.dp)
             )
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            // --- FOOTER: Badge de Emoción + Acción ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Chip de Emoción (Estilo Píldora)
                 EmotionChip(emotionName = post.emotion)
-
-                // Botón de "Me gusta" (Visual)
                 IconButton(
-                    onClick = { /* Lógica futura de like */ },
+                    onClick = { },
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.FavoriteBorder,
                         contentDescription = "Apoyar",
-                        tint = Color(0xFF94A3B8) // Gris suave (Heart)
+                        tint = Color(0xFF94A3B8)
                     )
                 }
             }
@@ -450,21 +527,18 @@ fun PostItem(post: ForumPost) {
     }
 }
 
-// --- COMPONENTES AUXILIARES ---
-
 @Composable
 fun UserAvatar(name: String) {
-    val initials = name.take(1).uppercase()
-    // Generamos un color pastel aleatorio consistente basado en el nombre
+    val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
     val colorIndex = name.hashCode().absoluteValue % 5
     val avatarColors = listOf(
-        Color(0xFFE0F2FE), // Sky
-        Color(0xFFDCFCE7), // Green
-        Color(0xFFFAE8FF), // Purple
-        Color(0xFFFEE2E2), // Red
-        Color(0xFFFEF3C7)  // Amber
+        Color(0xFFE0F2FE),
+        Color(0xFFDCFCE7),
+        Color(0xFFFAE8FF),
+        Color(0xFFFEE2E2),
+        Color(0xFFFEF3C7)
     )
-    val textColor = Color(0xFF475569) // Slate-600
+    val textColor = Color(0xFF475569)
 
     Box(
         contentAlignment = Alignment.Center,
@@ -484,18 +558,15 @@ fun UserAvatar(name: String) {
 
 @Composable
 fun EmotionChip(emotionName: String) {
-    // Obtenemos el color base de tu lista existente
     val baseColor = getEmotionColor(emotionName)
-
     Surface(
         color = baseColor,
-        shape = RoundedCornerShape(50), // Completamente redondeado
+        shape = RoundedCornerShape(50),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
-            // Pequeño punto decorativo (dot)
             Box(
                 modifier = Modifier
                     .size(6.dp)
@@ -507,18 +578,15 @@ fun EmotionChip(emotionName: String) {
                 text = emotionName,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF334155) // Slate-700
+                color = Color(0xFF334155)
             )
         }
     }
 }
 
-// Necesario para el cálculo del color aleatorio
-private val Int.absoluteValue: Int
-    get() = if (this < 0) -this else this
-
-// Función auxiliar simple para dar color al badge según el texto de la emoción
-// Puedes ponerla al final de tu archivo ForumScreen.kt
 fun getEmotionColor(emotionName: String): Color {
     return emotionsList.find { it.name == emotionName }?.color ?: Color(0xFFF1F5F9)
 }
+
+// Remove or comment out the problematic custom shadow extension function
+// fun Modifier.shadow(...) // Removing this to avoid the 'toPx' error.
