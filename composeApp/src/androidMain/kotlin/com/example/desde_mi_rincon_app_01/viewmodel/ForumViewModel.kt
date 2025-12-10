@@ -55,15 +55,12 @@ class ForumViewModel : ViewModel() {
     }
 
     // Función para escuchar mensajes en tiempo real
-    fun listenToPosts(emotion: String) {
+    fun listenToAllPosts() {
         db.collection("posts")
-            // Filtramos por emoción para crear "salas" temáticas
-            .whereEqualTo("emotion", emotion)
-            // Ordenamos por fecha (el más nuevo arriba)
+            // .whereEqualTo("emotion", emotion) <--- ESTA LÍNEA SE ELIMINA
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    // Manejo de error silencioso o log
                     return@addSnapshotListener
                 }
 

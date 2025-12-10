@@ -119,8 +119,11 @@ fun ForumWriteScreen(
     viewModel: ForumViewModel = viewModel()
 ) {
     // 1. Cargamos los posts al entrar a la pantalla
-    LaunchedEffect(emotionName) {
-        viewModel.listenToPosts(emotionName)
+    //Update:
+    // MODIFICACIÓN: Cambiamos 'emotionName' por 'Unit' para que cargue solo una vez
+    // y llamamos a la nueva función sin parámetros.
+    LaunchedEffect(Unit) {
+        viewModel.listenToAllPosts()
     }
 
     // Estados del formulario
@@ -294,11 +297,27 @@ fun PostItem(post: ForumPost) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+
+            // --- NUEVO: Etiqueta de la Emoción ---
+            Surface(
+                color = getEmotionColor(post.emotion), // Función auxiliar abajo
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text(
+                    text = post.emotion,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = Color.DarkGray
+                )
+            }
+            // --------------------------------------
+
             // Contenido del mensaje
             Text(
                 text = post.message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF1E293B) // Slate-800
+                color = Color(0xFF1E293B)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -312,16 +331,21 @@ fun PostItem(post: ForumPost) {
                     text = post.author,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D9488) // Teal
+                    color = Color(0xFF0D9488)
                 )
 
-                // Formateo de fecha simple (puedes usar librerías de fecha luego)
                 Text(
-                    text = "Hace un momento",
+                    text = "Hace un momento", // Aquí podrías formatear post.timestamp
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )
             }
         }
     }
+}
+
+// Función auxiliar simple para dar color al badge según el texto de la emoción
+// Puedes ponerla al final de tu archivo ForumScreen.kt
+fun getEmotionColor(emotionName: String): Color {
+    return emotionsList.find { it.name == emotionName }?.color ?: Color(0xFFF1F5F9)
 }
