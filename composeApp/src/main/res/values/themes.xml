@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.DesdeMiRincon" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">#0D9488</item>
 
         <item name="android:statusBarColor">#0D9488</item>
+        <item name="android:windowLightStatusBar">false</item> <item name="android:navigationBarColor">#0D9488</item>
 
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">#0D9488</item>
     </style>
 </resources>
