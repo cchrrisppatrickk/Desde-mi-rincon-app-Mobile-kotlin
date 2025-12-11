@@ -27,6 +27,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desde_mi_rincon_app_01.data.model.VideoCapsule
+import com.example.desde_mi_rincon_app_01.ui.components.common.CapsuleSkeleton
 import com.example.desde_mi_rincon_app_01.viewmodel.CapsulesViewModel
 
 // --- PALETA DE COLORES LOCAL (Minimalista) ---
@@ -38,17 +39,15 @@ private val TextLight = Color(0xFF64748B)
 fun CapsulesScreen(viewModel: CapsulesViewModel = viewModel()) {
     val capsules by viewModel.capsules.collectAsState()
     val uriHandler = LocalUriHandler.current
-
     var showDialog by remember { mutableStateOf(false) }
 
-    // Fondo general limpio
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFAFAFA)) // Gris muy, muy claro (Casi blanco)
+            .background(Color(0xFFFAFAFA))
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        // --- CABECERA ---
+        // --- CABECERA (Se mantiene igual) ---
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -63,38 +62,38 @@ fun CapsulesScreen(viewModel: CapsulesViewModel = viewModel()) {
                         letterSpacing = (-0.5).sp
                     )
                 )
-                Text(
-                    text = "Recursos para sanar.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextLight
-                )
+                Text("Recursos para sanar.", style = MaterialTheme.typography.bodyMedium, color = TextLight)
             }
-
-            // Botón "Tonal" (Más moderno que el botón sólido fuerte)
             FilledTonalButton(
                 onClick = { showDialog = true },
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = TealPrimary.copy(alpha = 0.1f),
-                    contentColor = TealPrimary
-                ),
+                colors = ButtonDefaults.filledTonalButtonColors(containerColor = TealPrimary.copy(alpha = 0.1f), contentColor = TealPrimary),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Subir", fontWeight = FontWeight.SemiBold)
             }
         }
 
-        // --- GRID DE VIDEOS ---
+        // --- GRID CON LÓGICA DE SKELETON ---
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 80.dp) // Espacio para scroll final
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            items(capsules) { capsule ->
-                MinimalVideoCard(capsule = capsule) {
-                    uriHandler.openUri(capsule.videoUrl)
+            // LÓGICA DE CARGA
+            if (capsules.isEmpty()) {
+                // Muestra 6 tarjetas "fantasma" mientras carga
+                items(6) {
+                    CapsuleSkeleton()
+                }
+            } else {
+                // Muestra los datos reales cuando llegan
+                items(capsules) { capsule ->
+                    MinimalVideoCard(capsule = capsule) {
+                        uriHandler.openUri(capsule.videoUrl)
+                    }
                 }
             }
         }
@@ -103,10 +102,7 @@ fun CapsulesScreen(viewModel: CapsulesViewModel = viewModel()) {
     if (showDialog) {
         AddCapsuleDialog(
             onDismiss = { showDialog = false },
-            onConfirm = { title, desc, cat, url ->
-                viewModel.addCapsule(title, desc, cat, url)
-                showDialog = false
-            }
+            onConfirm = { title, desc, cat, url -> viewModel.addCapsule(title, desc, cat, url); showDialog = false }
         )
     }
 }

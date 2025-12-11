@@ -39,6 +39,9 @@ fun PostItem(
     onLikeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+    val textLengthLimit = 100 // ← CAMBIA ESTE NÚMERO
+
     // Memoizar cálculos costosos
     val isLiked by remember(post, currentUserId) {
         derivedStateOf { post.likedBy.contains(currentUserId) }
@@ -49,7 +52,7 @@ fun PostItem(
     }
 
     val isTextLong by remember(post) {
-        derivedStateOf { post.message.length > 150 }
+        derivedStateOf { post.message.length > textLengthLimit }
     }
 
     // Estado local con rememberSaveable para sobrevivir a recomposiciones

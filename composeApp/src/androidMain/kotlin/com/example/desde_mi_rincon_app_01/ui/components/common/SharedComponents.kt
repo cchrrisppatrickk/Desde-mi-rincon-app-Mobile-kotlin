@@ -41,6 +41,39 @@ fun UserAvatar(name: String, modifier: Modifier) {
     }
 }
 
+//////////////////////////////
+// UserAvatar optimizado
+//@Composable
+//fun UserAvatar(
+//    name: String,
+//    modifier: Modifier = Modifier
+//) {
+//    val backgroundColor by remember(name) {
+//        derivedStateOf {
+//            when ((name.hashCode() % 5).absoluteValue) {
+//                0 -> Color(0xFF0D9488)
+//                1 -> Color(0xFF3B82F6)
+//                2 -> Color(0xFF8B5CF6)
+//                3 -> Color(0xFFEF4444)
+//                else -> Color(0xFFF59E0B)
+//            }
+//        }
+//    }
+//
+//    Box(
+//        modifier = modifier
+//            .background(backgroundColor, CircleShape)
+//            .clip(CircleShape),
+//        contentAlignment = Alignment.Center
+//    ) {
+//        Text(
+//            text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+//            color = Color.White,
+//            fontWeight = FontWeight.Bold
+//        )
+//    }
+//}
+
 @Composable
 fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = emotion.color), shape = RoundedCornerShape(16.dp), modifier = Modifier.height(120.dp).clickable { onClick() }, elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -168,5 +201,55 @@ fun PostItemSkeleton() {
                 .clip(RoundedCornerShape(4.dp))
                 .shimmerEffect()
         )
+    }
+}
+
+
+// 2. EL ITEM ESQUELETO (Simula la forma de tu PostItem Cápsulas de Video)
+@Composable
+fun CapsuleSkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.8f) // Misma proporción que tu tarjeta real
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+    ) {
+        // 1. Área del Thumbnail (Ocupa la mayor parte)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .shimmerEffect() // Efecto de brillo gris
+        )
+
+        // 2. Área de Información
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Título falso
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            // Descripción falsa (2 líneas)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(12.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+        }
     }
 }
