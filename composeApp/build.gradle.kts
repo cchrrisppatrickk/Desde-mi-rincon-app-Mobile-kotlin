@@ -112,5 +112,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
     implementation("androidx.compose.animation:animation:1.10.0")
+
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
 }
 
