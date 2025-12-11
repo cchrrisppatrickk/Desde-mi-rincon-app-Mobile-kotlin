@@ -1,5 +1,6 @@
 // Archivo: App.kt
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.desde_mi_rincon_app_01.navigation.AppScreen
 import com.example.desde_mi_rincon_app_01.ui.components.ChatBotOverlay
+import com.example.desde_mi_rincon_app_01.ui.screens.SplashScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.capsules.CapsulesScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.challenges.ChallengesScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumFeedScreen
@@ -32,6 +34,11 @@ import com.example.desde_mi_rincon_app_01.ui.screens.weekly.WeeklyScreen
 @Composable
 fun App() {
     val navController = rememberNavController()
+    // Obtenemos la ruta actual en tiempo real para saber dónde estamos
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+
     val screens = listOf(
         AppScreen.Home,
         AppScreen.Forum,
@@ -45,51 +52,51 @@ fun App() {
 
         Scaffold(
             // Barra de navegación minimalista
+            // 2. LÓGICA CONDICIONAL PARA LA BARRA
             bottomBar = {
-                NavigationBar(
-                    containerColor = Color.White,
-                    tonalElevation = 8.dp, // Sombra sutil hacia arriba
-                    modifier = Modifier.shadow(16.dp) // Sombra extra para efecto flotante
-                ) {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-
-                    screens.forEach { screen ->
-                        val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-
-                        NavigationBarItem(
-                            icon = {
-                                Icon(
-                                    imageVector = screen.icon,
-                                    contentDescription = screen.title,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            },
-                            // Minimalismo: Ocultamos el texto si no está seleccionado (opcional)
-                            // O simplemente lo dejamos pequeño. Aquí lo dejamos siempre visible pero sutil.
-                            label = {
-                                Text(
-                                    screen.title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if(isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
-                                )
-                            },
-                            selected = isSelected,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color(0xFF0D9488), // Teal Primary
-                                selectedTextColor = Color(0xFF0D9488),
-                                indicatorColor = Color(0xFFE0F2F1),    // Teal muy suave
-                                unselectedIconColor = Color(0xFF94A3B8), // Slate-400
-                                unselectedTextColor = Color(0xFF94A3B8)
-                            ),
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                // Solo mostramos la barra SI la ruta actual NO es Splash
+                if (currentRoute != AppScreen.Splash.route) {
+                    NavigationBar(
+                        containerColor = Color.White,
+                        tonalElevation = 8.dp,
+                        modifier = Modifier.shadow(16.dp)
+                    ) {
+                        screens.forEach { screen ->
+                            val isSelected = currentRoute == screen.route // Simplificado
+                            NavigationBarItem(
+                                icon = {
+                                    Icon(
+                                        imageVector = screen.icon,
+                                        contentDescription = screen.title,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                },
+                                label = {
+                                    if(isSelected) {
+                                        Text(
+                                            screen.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                },
+                                selected = isSelected,
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(0xFF0D9488),
+                                    selectedTextColor = Color(0xFF0D9488),
+                                    indicatorColor = Color(0xFFE0F2F1),
+                                    unselectedIconColor = Color(0xFF94A3B8),
+                                    unselectedTextColor = Color(0xFF94A3B8)
+                                ),
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -98,10 +105,29 @@ fun App() {
             // CONTENEDOR DE PANTALLAS
             NavHost(
                 navController = navController,
-                startDestination = AppScreen.Home.route,
-                modifier = Modifier.padding(innerPadding)
+                startDestination = AppScreen.Splash.route,
+                // IMPORTANTE: Si estamos en Splash, no aplicamos el padding del Scaffold
+                // para que el color cubra toda la pantalla, incluso detrás de la barra de estado.
+                modifier = Modifier.padding(
+                    if (currentRoute == AppScreen.Splash.route) PaddingValues(0.dp) else innerPadding
+                )
             ) {
                 composable(AppScreen.Home.route) { HomeScreen() }
+
+
+                // CAMBIO 2: Definir la pantalla Splash
+                composable(AppScreen.Splash.route) {
+                    SplashScreen(
+                        onNavigateToHome = {
+                            navController.navigate(AppScreen.Home.route) {
+                                // TRUCO PRO: Esto borra el Splash del historial.
+                                // Si el usuario da "Atrás" en el Home, se sale de la app,
+                                // no vuelve a la pantalla de carga.
+                                popUpTo(AppScreen.Splash.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
 
                 // --- FLUJO FORO ---
                 composable(AppScreen.Forum.route) {
@@ -146,6 +172,8 @@ fun App() {
 
         // EL CHATBOT FLOTA SOBRE EL SCAFFOLD
         // Gracias al z-index natural del Box, este componente se dibuja AL FINAL, quedando encima.
-        ChatBotOverlay(bottomOffset = 135.dp)
+        if (currentRoute != AppScreen.Splash.route) {
+            ChatBotOverlay(bottomOffset = 135.dp)
+        }
     }
 }
