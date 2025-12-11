@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow // FIXED: standard shadow import
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -141,6 +142,10 @@ fun ForumFeedScreen(
 
     val posts by viewModel.posts.collectAsState()
 
+    // Obtenemos el ID del usuario actual
+    val context = LocalContext.current
+    val currentUserId = remember { viewModel.getUserId(context) }
+
     Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -171,7 +176,13 @@ fun ForumFeedScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(posts) { post ->
-                        PostItem(post)
+                        PostItem(
+                            post = post,
+                            currentUserId = currentUserId, // Pasamos el ID
+                            onLikeClick = {
+                                viewModel.toggleLike(post, currentUserId) // Acción al hacer click
+                            }
+                        )
                     }
                 }
             }
@@ -460,7 +471,19 @@ fun ModeButton(
 }
 
 @Composable
-fun PostItem(post: ForumPost) {
+fun PostItem(
+    post: ForumPost,
+    currentUserId: String, // Recibimos ID usuario
+    onLikeClick: () -> Unit // Recibimos la acción
+) {
+    // Calculamos si este usuario ya dio like
+    val isLiked = post.likedBy.contains(currentUserId)
+    val likeCount = post.likedBy.size
+
+    // Colores para el estado
+    val likeColor = if (isLiked) Color(0xFFE11D48) else Color(0xFF94A3B8) // Rojo vs Gris
+    val icon = if (isLiked) Icons.Filled.Favorite else Icons.Default.FavoriteBorder
+
     ElevatedCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -506,23 +529,31 @@ fun PostItem(post: ForumPost) {
                 modifier = Modifier.padding(start = 2.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                EmotionChip(emotionName = post.emotion)
+            // BOTÓN DE LIKE
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Contador (solo visible si hay likes)
+                AnimatedVisibility(visible = likeCount > 0) {
+                    Text(
+                        text = likeCount.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = likeColor,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                }
+
                 IconButton(
-                    onClick = { },
+                    onClick = onLikeClick,
                     modifier = Modifier.size(24.dp)
                 ) {
+                    // Icono con animación de cambio
                     Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "Apoyar",
-                        tint = Color(0xFF94A3B8)
+                        imageVector = icon,
+                        contentDescription = "Me gusta",
+                        tint = likeColor
                     )
                 }
             }
+
         }
     }
 }
