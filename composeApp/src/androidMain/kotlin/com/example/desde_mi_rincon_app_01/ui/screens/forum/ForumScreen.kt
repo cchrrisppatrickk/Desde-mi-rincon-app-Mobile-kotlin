@@ -119,6 +119,8 @@ fun ForumFeedScreen(
     val currentUserId = remember { viewModel.getUserId(context) }
 
     Scaffold(
+        // CAMBIO 1: Movemos el botón al CENTRO para que no choque con el Chatbot (que está a la derecha)
+        floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onShareFeeling,
@@ -130,12 +132,15 @@ fun ForumFeedScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+
+            // CAMBIO 2: Ajuste del título "Comunidad"
             Text(
                 text = "Comunidad",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF334155),
-                modifier = Modifier.padding(24.dp)
+                // Usamos padding específico. 'vertical = 8.dp' reduce el espacio arriba y abajo.
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
             if (posts.isEmpty()) {
@@ -144,15 +149,16 @@ fun ForumFeedScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(bottom = 80.dp, start = 16.dp, end = 16.dp),
+                    // Aumentamos un poco el padding inferior para que el botón central no tape el último mensaje
+                    contentPadding = PaddingValues(bottom = 100.dp, start = 16.dp, end = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(posts) { post ->
                         PostItem(
                             post = post,
-                            currentUserId = currentUserId, // Pasamos el ID
+                            currentUserId = currentUserId,
                             onLikeClick = {
-                                viewModel.toggleLike(post, currentUserId) // Acción al hacer click
+                                viewModel.toggleLike(post, currentUserId)
                             }
                         )
                     }

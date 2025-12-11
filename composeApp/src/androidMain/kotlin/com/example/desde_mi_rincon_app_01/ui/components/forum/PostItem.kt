@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.common.UserAvatar // (Ver paso 3)
+import com.example.desde_mi_rincon_app_01.utils.getTimeAgo
 
 
 @Composable
@@ -70,12 +71,16 @@ fun PostItem(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1E293B)
                     )
+
+                    // --- AQUÍ ESTÁ EL CAMBIO ---
                     Text(
-                        text = "Hace un momento",
+                        // Usamos la función pasando el timestamp del post real
+                        text = getTimeAgo(post.timestamp),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF94A3B8),
                         fontSize = 11.sp
                     )
+                    // ---------------------------
                 }
 
                 // --- ZONA DEL CORAZÓN (Movido aquí) ---
