@@ -2,11 +2,13 @@ package com.example.desde_mi_rincon_app_01.ui.screens.forum
 
 // --- IMPORTS ---
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween // FIXED: Added import for tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,29 +36,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.DrawingCanvas
+import com.example.desde_mi_rincon_app_01.ui.components.common.EmotionCard
+import com.example.desde_mi_rincon_app_01.ui.components.common.ModeSelector
+import com.example.desde_mi_rincon_app_01.ui.components.forum.PostItem
+import com.example.desde_mi_rincon_app_01.utils.emotionsList
+import com.example.desde_mi_rincon_app_01.utils.getEmotionColor
 import com.example.desde_mi_rincon_app_01.viewmodel.ForumViewModel
 import kotlin.math.absoluteValue
 
-// --- DATA ---
-data class EmotionItem(val name: String, val emoji: String, val color: Color)
 
-val emotionsList = listOf(
-    EmotionItem("Agotado", "😫", Color(0xFFE2E8F0)),
-    EmotionItem("Esperanzado", "🌻", Color(0xFFFEF9C3)),
-    EmotionItem("Frustrado", "😤", Color(0xFFFEE2E2)),
-    EmotionItem("En Paz", "🕊️", Color(0xFFDBEAFE)),
-    EmotionItem("Triste", "🌧️", Color(0xFFE0E7FF)),
-    EmotionItem("Confundido", "🌀", Color(0xFFF3E8FF)),
-    EmotionItem("Eufórico", "🎉", Color(0xFFFCE7F3)),
-    EmotionItem("Nostálgico", "📜", Color(0xFFFEF3C7)),
-    EmotionItem("Determinado", "💪", Color(0xFFD1FAE5)),
-    EmotionItem("Asombrado", "🤯", Color(0xFFFFF7ED))
-)
+
+
 
 // --- SCREEN 1: SELECTION ---
 @Composable
@@ -104,31 +101,6 @@ fun ForumSelectionScreen(
     }
 }
 
-@Composable
-fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = emotion.color),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .height(120.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = emotion.emoji, fontSize = 40.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = emotion.name,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF475569)
-            )
-        }
-    }
-}
 
 // --- SCREEN 2: FEED ---
 @Composable
@@ -189,6 +161,7 @@ fun ForumFeedScreen(
         }
     }
 }
+
 
 // --- SCREEN 3: WRITE (FORM) ---
 @OptIn(ExperimentalMaterial3Api::class)
@@ -400,224 +373,6 @@ fun ForumWriteScreen(
     }
 }
 
-// --- COMPONENTS ---
-@Composable
-fun ModeSelector(
-    selectedMode: String,
-    onModeSelected: (String) -> Unit,
-    accentColor: Color
-) {
-    Row(
-        modifier = Modifier
-            .background(Color(0xFFE2E8F0), RoundedCornerShape(50))
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        ModeButton(
-            text = "Escribir",
-            icon = Icons.Outlined.Edit,
-            isSelected = selectedMode == "text",
-            onClick = { onModeSelected("text") },
-            activeColor = accentColor,
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        ModeButton(
-            text = "Dibujar",
-            icon = Icons.Outlined.Brush,
-            isSelected = selectedMode == "draw",
-            onClick = { onModeSelected("draw") },
-            activeColor = accentColor,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
 
-@Composable
-fun ModeButton(
-    text: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    activeColor: Color,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor = if (isSelected) Color.White else Color.Transparent
-    val contentColor = if (isSelected) activeColor else Color.Gray
-    val elevation = if (isSelected) 2.dp else 0.dp
 
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = backgroundColor,
-        shadowElevation = elevation,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = text,
-                color = contentColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-        }
-    }
-}
 
-@Composable
-fun PostItem(
-    post: ForumPost,
-    currentUserId: String, // Recibimos ID usuario
-    onLikeClick: () -> Unit // Recibimos la acción
-) {
-    // Calculamos si este usuario ya dio like
-    val isLiked = post.likedBy.contains(currentUserId)
-    val likeCount = post.likedBy.size
-
-    // Colores para el estado
-    val likeColor = if (isLiked) Color(0xFFE11D48) else Color(0xFF94A3B8) // Rojo vs Gris
-    val icon = if (isLiked) Icons.Filled.Favorite else Icons.Default.FavoriteBorder
-
-    ElevatedCard(
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                UserAvatar(name = post.author)
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.author.ifBlank { "Anónimo" },
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
-                    )
-                    Text(
-                        text = "Hace un momento",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Default.MoreHoriz,
-                    contentDescription = "Opciones",
-                    tint = Color(0xFFCBD5E1)
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = post.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF334155),
-                lineHeight = 20.sp,
-                modifier = Modifier.padding(start = 2.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            // BOTÓN DE LIKE
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Contador (solo visible si hay likes)
-                AnimatedVisibility(visible = likeCount > 0) {
-                    Text(
-                        text = likeCount.toString(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = likeColor,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = onLikeClick,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    // Icono con animación de cambio
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = "Me gusta",
-                        tint = likeColor
-                    )
-                }
-            }
-
-        }
-    }
-}
-
-@Composable
-fun UserAvatar(name: String) {
-    val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
-    val colorIndex = name.hashCode().absoluteValue % 5
-    val avatarColors = listOf(
-        Color(0xFFE0F2FE),
-        Color(0xFFDCFCE7),
-        Color(0xFFFAE8FF),
-        Color(0xFFFEE2E2),
-        Color(0xFFFEF3C7)
-    )
-    val textColor = Color(0xFF475569)
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(avatarColors[colorIndex])
-    ) {
-        Text(
-            text = initials,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-            fontSize = 16.sp
-        )
-    }
-}
-
-@Composable
-fun EmotionChip(emotionName: String) {
-    val baseColor = getEmotionColor(emotionName)
-    Surface(
-        color = baseColor,
-        shape = RoundedCornerShape(50),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.2f))
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = emotionName,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF334155)
-            )
-        }
-    }
-}
-
-fun getEmotionColor(emotionName: String): Color {
-    return emotionsList.find { it.name == emotionName }?.color ?: Color(0xFFF1F5F9)
-}
-
-// Remove or comment out the problematic custom shadow extension function
-// fun Modifier.shadow(...) // Removing this to avoid the 'toPx' error.
