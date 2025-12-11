@@ -64,9 +64,12 @@ fun ForumSelectionScreen(
     onGoToFeed: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 24.dp), // Un poco más de aire vertical
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // 1. TÍTULO PRINCIPAL
         Text(
             text = "¿Cómo está tu corazón hoy?",
             style = MaterialTheme.typography.headlineSmall,
@@ -75,30 +78,48 @@ fun ForumSelectionScreen(
             textAlign = TextAlign.Center
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 2. NUEVA UBICACIÓN DEL BOTÓN (Arriba)
+        // Usamos FilledTonalButton: Es elegante, destaca, pero no compite con las tarjetas de colores.
+        FilledTonalButton(
+            onClick = onGoToFeed,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = Color( 0xFF0D9488), // Slate-100 (Gris muy suave)
+                contentColor = Color(0xFFF1F5F9)    // Teal (Tu color primario)
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Groups, // Icono de gente/comunidad
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Solo quiero leer a la comunidad",
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
+        // 3. GRID DE EMOCIONES
+        // El modifier.weight(1f) es CRÍTICO: le dice al Grid "ocupa todo el espacio restante hacia abajo"
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
+            // Agregamos padding inferior extra para que el último item no quede pegado al borde
+            contentPadding = PaddingValues(bottom = 24.dp),
             modifier = Modifier.weight(1f)
         ) {
             items(emotionsList) { emotion ->
                 EmotionCard(emotion) { onEmotionSelected(emotion.name) }
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onGoToFeed,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Default.List, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Ver mensajes de la comunidad")
         }
     }
 }

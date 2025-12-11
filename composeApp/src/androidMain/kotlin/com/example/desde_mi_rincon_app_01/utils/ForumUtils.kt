@@ -13,7 +13,14 @@ val emotionsList = listOf(
     EmotionItem("Eufórico", "🎉", Color(0xFFFCE7F3)),
     EmotionItem("Nostálgico", "📜", Color(0xFFFEF3C7)),
     EmotionItem("Determinado", "💪", Color(0xFFD1FAE5)),
-    EmotionItem("Asombrado", "🤯", Color(0xFFFFF7ED))
+    EmotionItem("Asombrado", "🤯", Color(0xFFFFF7ED)),
+            // --- NUEVAS EMOCIONES ---
+    EmotionItem("Ansioso", "😰", Color(0xFFFEEBC8)),   // Naranja pálido (Alerta suave)
+    EmotionItem("Agradecido", "🙏", Color(0xFFF0FDFA)), // Teal muy suave (Calma/Gratitud)
+    EmotionItem("Enojado", "😡", Color(0xFFFFD1D1)),    // Rojo suave (Diferente a frustrado)
+    EmotionItem("Inspirado", "✨", Color(0xFFECFCCB)),   // Lima suave (Creatividad/Idea)
+    EmotionItem("Solo", "🥀", Color(0xFFF1F5F9)),       // Gris frío (Soledad/Melancolía)
+    EmotionItem("Valiente", "🦁", Color(0xFFFFE4C4))    // Beige/Dorado (Fortaleza)
 )
 
 fun getEmotionColor(emotionName: String): Color {

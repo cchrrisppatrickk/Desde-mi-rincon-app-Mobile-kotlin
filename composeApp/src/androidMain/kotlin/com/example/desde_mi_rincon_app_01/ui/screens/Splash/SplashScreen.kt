@@ -45,7 +45,7 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
         )
 
         // 2. Esperar un momento (Simula carga o espera a Firebase)
-        delay(1500)
+        delay(1000)
 
         // 3. Navegar al Home
         onNavigateToHome()

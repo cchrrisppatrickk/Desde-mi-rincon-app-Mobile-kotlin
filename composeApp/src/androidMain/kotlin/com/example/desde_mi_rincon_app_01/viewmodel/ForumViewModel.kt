@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
+import com.example.desde_mi_rincon_app_01.utils.randomNames
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,10 +28,7 @@ class ForumViewModel : ViewModel() {
     val status: StateFlow<String?> = _status
 
     // Lista de nombres creativos para el modo aleatorio
-    private val randomNames = listOf(
-        "Viajero Silencioso", "Alma Valiente", "Estrella Fugaz",
-        "Caminante", "Luz de Luna", "Brote Nuevo", "Corazón Valiente"
-    )
+
 
     fun sendPost(emotion: String, message: String, inputName: String) {
         if (message.isBlank()) {
