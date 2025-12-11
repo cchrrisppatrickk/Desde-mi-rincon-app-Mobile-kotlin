@@ -117,7 +117,11 @@ fun App() {
 
                 composable(AppScreen.CommunityFeed.route) {
                     ForumFeedScreen(
-                        onShareFeeling = { navController.popBackStack() }
+                        onShareFeeling = {
+                            navController.navigate(AppScreen.Forum.route) {
+                                popUpTo(AppScreen.CommunityFeed.route) { saveState = true }
+                            }
+                        }
                     )
                 }
 

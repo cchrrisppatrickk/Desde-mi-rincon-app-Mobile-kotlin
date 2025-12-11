@@ -1,5 +1,11 @@
 package com.example.desde_mi_rincon_app_01.ui.components.common
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,9 +16,13 @@ import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -22,11 +32,11 @@ import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
 import kotlin.math.absoluteValue
 
 @Composable
-fun UserAvatar(name: String) {
+fun UserAvatar(name: String, modifier: Modifier) {
     val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
     val colorIndex = name.hashCode().absoluteValue % 5
     val avatarColors = listOf(Color(0xFFE0F2FE), Color(0xFFDCFCE7), Color(0xFFFAE8FF), Color(0xFFFEE2E2), Color(0xFFFEF3C7))
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp).clip(CircleShape).background(avatarColors[colorIndex])) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier.clip(CircleShape).background(avatarColors[colorIndex])) {
         Text(text = initials, fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 16.sp)
     }
 }
@@ -63,5 +73,100 @@ fun ModeButton(text: String, icon: ImageVector, isSelected: Boolean, onClick: ()
             Spacer(modifier = Modifier.width(8.dp))
             Text(text, color = contentColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         }
+    }
+}
+
+// 1. EXTENSIÓN PARA EL EFECTO BRILLO (SHIMMER)
+fun Modifier.shimmerEffect(): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnimation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1000,
+                easing = FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ), label = "shimmer_float"
+    )
+
+    val shimmerColors = listOf(
+        Color.LightGray.copy(alpha = 0.6f),
+        Color.LightGray.copy(alpha = 0.2f),
+        Color.LightGray.copy(alpha = 0.6f),
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(x = translateAnimation, y = translateAnimation)
+    )
+
+    this.background(brush)
+}
+
+// 2. EL ITEM ESQUELETO (Simula la forma de tu PostItem)
+@Composable
+fun PostItemSkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(Color.White, RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        // Cabecera (Avatar + Nombre)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .shimmerEffect() // Aplicamos el efecto
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Box(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .shimmerEffect()
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .shimmerEffect()
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        // Cuerpo del mensaje (Simulación de 3 líneas de texto)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .shimmerEffect()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(14.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .shimmerEffect()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .height(14.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .shimmerEffect()
+        )
     }
 }

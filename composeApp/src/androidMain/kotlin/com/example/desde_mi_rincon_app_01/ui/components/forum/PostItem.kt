@@ -1,7 +1,14 @@
 package com.example.desde_mi_rincon_app_01.ui.components.forum
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -11,6 +18,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,124 +31,153 @@ import com.example.desde_mi_rincon_app_01.ui.components.common.UserAvatar // (Ve
 import com.example.desde_mi_rincon_app_01.utils.getTimeAgo
 
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun PostItem(
     post: ForumPost,
     currentUserId: String,
-    onLikeClick: () -> Unit
+    onLikeClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    // Calculamos si este usuario ya dio like
-    val isLiked = post.likedBy.contains(currentUserId)
-    val likeCount = post.likedBy.size
+    // Memoizar cálculos costosos
+    val isLiked by remember(post, currentUserId) {
+        derivedStateOf { post.likedBy.contains(currentUserId) }
+    }
 
-    // Colores e iconos para el estado
-    val likeColor = if (isLiked) Color(0xFFE11D48) else Color(0xFF94A3B8) // Rojo vs Gris
+    val likeCount by remember(post) {
+        derivedStateOf { post.likedBy.size }
+    }
+
+    val isTextLong by remember(post) {
+        derivedStateOf { post.message.length > 150 }
+    }
+
+    // Estado local con rememberSaveable para sobrevivir a recomposiciones
+    var isExpanded by rememberSaveable(post.id) { mutableStateOf(false) }
+
+    // Memoizar colores e iconos
+    val likeColor = if (isLiked) Color(0xFFE11D48) else Color(0xFF94A3B8)
     val icon = if (isLiked) Icons.Filled.Favorite else Icons.Default.FavoriteBorder
 
-    // Lógica para "Ver más"
-    var isExpanded by remember { mutableStateOf(false) }
-    val textLengthLimit = 150 // Caracteres aproximados para considerar un texto "largo"
-    val isTextLong = post.message.length > textLengthLimit
+    // InteractionSource para el like (mejor manejo de estados)
+    val likeInteractionSource = remember { MutableInteractionSource() }
 
     ElevatedCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            // Animación suave al expandir/colapsar la tarjeta
-            .animateContentSize()
+            .animateContentSize(
+                animationSpec = tween(durationMillis = 300)
+            )
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(12.dp) // Reducir padding interno
                 .fillMaxWidth()
         ) {
-            // --- ROW 1: ENCABEZADO (Avatar + Info + LIKE) ---
-            Row(verticalAlignment = Alignment.Top) {
-                UserAvatar(name = post.author)
+            // --- ENCABEZADO ---
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Avatar optimizado
+                UserAvatar(
+                    name = post.author,
+                    modifier = Modifier.size(40.dp)
+                )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // Columna central (Nombre y fecha)
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = post.author.ifBlank { "Anónimo" },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = Color(0xFF1E293B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
-                    // --- AQUÍ ESTÁ EL CAMBIO ---
                     Text(
-                        // Usamos la función pasando el timestamp del post real
                         text = getTimeAgo(post.timestamp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF94A3B8)
                     )
-                    // ---------------------------
                 }
 
-                // --- ZONA DEL CORAZÓN (Movido aquí) ---
+                // Like button optimizado
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    // Contador (solo visible si hay likes)
-                    AnimatedVisibility(visible = likeCount > 0) {
-                        Text(
-                            text = likeCount.toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = likeColor,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(end = 4.dp)
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = likeInteractionSource,
+                            indication = null,
+                            onClick = onLikeClick
                         )
+                        .padding(4.dp)
+                ) {
+                    AnimatedContent(
+                        targetState = likeCount,
+                        transitionSpec = {
+                            slideInVertically { height -> height } +
+                                    fadeIn() with
+                                    slideOutVertically { height -> -height } +
+                                    fadeOut()
+                        },
+                        label = "likeCountAnimation"
+                    ) { targetCount ->
+                        if (targetCount > 0) {
+                            Text(
+                                text = targetCount.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = likeColor,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
+                        }
                     }
 
-                    // Icono Clickable sin el padding extra del IconButton por defecto para que quede más compacto
                     Icon(
                         imageVector = icon,
                         contentDescription = "Me gusta",
                         tint = likeColor,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null // Quitamos el efecto ripple para que sea más limpio
-                            ) { onLikeClick() }
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // --- ROW 2: MENSAJE CON "VER MÁS" ---
+            // --- CONTENIDO ---
             Column {
                 Text(
                     text = post.message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF334155),
                     lineHeight = 20.sp,
-                    // Si no está expandido y es largo, limitar a 3 líneas
                     maxLines = if (isExpanded) Int.MAX_VALUE else 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 2.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                // Botón de "Ver más / Ver menos" solo si el texto es largo
                 if (isTextLong) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isExpanded) "Ver menos" else "Ver más...",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xFF0D9488), // Color Teal (Acentuado)
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clickable { isExpanded = !isExpanded }
-                            .padding(vertical = 4.dp)
-                    )
+                    TextButton(
+                        onClick = { isExpanded = !isExpanded },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF0D9488)
+                        ),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isExpanded) "Ver menos" else "Ver más...",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

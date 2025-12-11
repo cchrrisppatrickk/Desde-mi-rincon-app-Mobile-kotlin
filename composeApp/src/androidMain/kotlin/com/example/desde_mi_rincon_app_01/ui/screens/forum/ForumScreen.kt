@@ -6,6 +6,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween // FIXED: Added import for tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -45,6 +46,7 @@ import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.DrawingCanvas
 import com.example.desde_mi_rincon_app_01.ui.components.common.EmotionCard
 import com.example.desde_mi_rincon_app_01.ui.components.common.ModeSelector
+import com.example.desde_mi_rincon_app_01.ui.components.common.PostItemSkeleton
 import com.example.desde_mi_rincon_app_01.ui.components.forum.PostItem
 import com.example.desde_mi_rincon_app_01.utils.emotionsList
 import com.example.desde_mi_rincon_app_01.utils.getEmotionColor
@@ -103,6 +105,7 @@ fun ForumSelectionScreen(
 
 
 // --- SCREEN 2: FEED ---
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ForumFeedScreen(
     onShareFeeling: () -> Unit,
@@ -113,13 +116,10 @@ fun ForumFeedScreen(
     }
 
     val posts by viewModel.posts.collectAsState()
-
-    // Obtenemos el ID del usuario actual
     val context = LocalContext.current
     val currentUserId = remember { viewModel.getUserId(context) }
 
     Scaffold(
-        // CAMBIO 1: Movemos el botón al CENTRO para que no choque con el Chatbot (que está a la derecha)
         floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -131,29 +131,46 @@ fun ForumFeedScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
-            // CAMBIO 2: Ajuste del título "Comunidad"
-            Text(
-                text = "Comunidad",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF334155),
-                // Usamos padding específico. 'vertical = 8.dp' reduce el espacio arriba y abajo.
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+        // --- OPTIMIZACIÓN SKELETON LOADING ---
+        // En lugar de if/else con Box, usamos LazyColumn para ambos estados
+        // para mantener la estructura visual.
+
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // CABECERA (Siempre visible)
+            item {
+                Text(
+                    text = "Comunidad",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF334155),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
 
             if (posts.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF0D9488))
+                // ESTADO DE CARGA: Mostramos 6 esqueletos
+                items(6) {
+                    PostItemSkeleton()
                 }
             } else {
-                LazyColumn(
-                    // Aumentamos un poco el padding inferior para que el botón central no tape el último mensaje
-                    contentPadding = PaddingValues(bottom = 100.dp, start = 16.dp, end = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(posts) { post ->
+                // ESTADO CON DATOS
+                items(
+                    items = posts,
+                    key = { post -> post.id }
+                ) { post ->
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            // Usa .animateItem() si tienes Compose 1.7+, sino .animateItemPlacement()
+                            .animateItem()
+                    ) {
                         PostItem(
                             post = post,
                             currentUserId = currentUserId,
@@ -167,7 +184,6 @@ fun ForumFeedScreen(
         }
     }
 }
-
 
 // --- SCREEN 3: WRITE (FORM) ---
 @OptIn(ExperimentalMaterial3Api::class)

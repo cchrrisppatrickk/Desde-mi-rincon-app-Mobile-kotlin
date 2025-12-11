@@ -114,5 +114,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.10.0")
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+
+    implementation("androidx.compose.foundation:foundation:1.8.0") // O la versión que uses
 }
 
