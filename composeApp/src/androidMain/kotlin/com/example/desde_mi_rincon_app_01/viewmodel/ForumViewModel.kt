@@ -3,6 +3,10 @@ package com.example.desde_mi_rincon_app_01.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.cachedIn
+import com.example.desde_mi_rincon_app_01.data.ForumPagingSource
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.utils.randomNames
 import com.google.firebase.firestore.FirebaseFirestore
@@ -21,14 +25,26 @@ class ForumViewModel : ViewModel() {
 
     private val _status = MutableStateFlow<String?>(null)
 
-    // NUEVO: Estado para la lista de posts
-    private val _posts = MutableStateFlow<List<ForumPost>>(emptyList())
-    val posts: StateFlow<List<ForumPost>> = _posts
+    // NUEVO: Flujo de Paginación
+    val postsPagingFlow = Pager(
+        // Configuración: pageSize = cuántos posts trae por carga (ej. 10)
+        config = PagingConfig(pageSize = 10, enablePlaceholders = false)
+    ) {
+        // Definimos la Query aquí (Ordenados por fecha)
+        val query = db.collection("posts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+
+        ForumPagingSource(query)
+    }.flow.cachedIn(viewModelScope) // cachedIn mantiene los datos vivos al rotar pantalla
 
     val status: StateFlow<String?> = _status
 
     // Lista de nombres creativos para el modo aleatorio
 
+
+    // 1. NUEVO: Mapa para guardar cambios locales temporalmente (ID -> Post Actualizado)
+    private val _localChanges = MutableStateFlow<Map<String, ForumPost>>(emptyMap())
+    val localChanges: StateFlow<Map<String, ForumPost>> = _localChanges
 
     fun sendPost(emotion: String, message: String, inputName: String) {
         if (message.isBlank()) {
@@ -71,27 +87,32 @@ class ForumViewModel : ViewModel() {
 
     // 2. Función para dar/quitar Like (Toggle)
     fun toggleLike(post: ForumPost, userId: String) {
-        // Referencia al documento específico
-        // NOTA: Asegúrate de que al crear el post guardes el ID del documento en el campo 'id'
-        // Si 'post.id' está vacío, no funcionará. Ver corrección abajo*.
         if (post.id.isEmpty()) return
 
-        val postRef = db.collection("posts").document(post.id)
-
+        // A. CALCULAR EL NUEVO ESTADO LOCALMENTE (Optimista)
         val currentLikes = post.likedBy.toMutableList()
-
         if (currentLikes.contains(userId)) {
-            // Si ya dio like, lo quitamos (Dislike)
-            currentLikes.remove(userId)
+            currentLikes.remove(userId) // Quitar like
         } else {
-            // Si no, lo agregamos
-            currentLikes.add(userId)
+            currentLikes.add(userId)    // Poner like
         }
 
-        // Actualizamos solo el campo 'likedBy' en Firestore
+        // Creamos el objeto post actualizado
+        val updatedPost = post.copy(likedBy = currentLikes)
+
+        // B. ACTUALIZAR LA UI INMEDIATAMENTE (Antes de ir a internet)
+        // Agregamos este post al mapa de cambios locales
+        _localChanges.value = _localChanges.value + (post.id to updatedPost)
+
+        // C. ACTUALIZAR FIREBASE EN SEGUNDO PLANO
+        val postRef = db.collection("posts").document(post.id)
         postRef.update("likedBy", currentLikes)
-            .addOnFailureListener { e ->
-                _status.value = "Error al dar like: ${e.localizedMessage}"
+            .addOnFailureListener {
+                // Si falla, revertimos el cambio local (Rollback)
+                // Quitamos el post del mapa para que vuelva a mostrar el original
+                val currentMap = _localChanges.value.toMutableMap()
+                currentMap.remove(post.id)
+                _localChanges.value = currentMap
             }
     }
 
@@ -100,22 +121,6 @@ class ForumViewModel : ViewModel() {
         _showSuccessDialog.value = false
     }
 
-    // Función para escuchar mensajes en tiempo real
-    fun listenToAllPosts() {
-        db.collection("posts")
-            // .whereEqualTo("emotion", emotion) <--- ESTA LÍNEA SE ELIMINA
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val postsList = snapshot.toObjects(ForumPost::class.java)
-                    _posts.value = postsList
-                }
-            }
-    }
 
     fun clearStatus() {
         _status.value = null

@@ -41,6 +41,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.DrawingCanvas
@@ -126,17 +128,20 @@ fun ForumSelectionScreen(
 
 
 // --- SCREEN 2: FEED ---
+// --- SCREEN 2: FEED (CORREGIDO) ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ForumFeedScreen(
     onShareFeeling: () -> Unit,
     viewModel: ForumViewModel = viewModel()
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.listenToAllPosts()
-    }
 
-    val posts by viewModel.posts.collectAsState()
+    // 1. OBSERVAMOS LOS CAMBIOS LOCALES (Para el Like instantáneo)
+    val localChanges by viewModel.localChanges.collectAsState()
+
+    // 2. Recolectamos los items paginados
+    val posts = viewModel.postsPagingFlow.collectAsLazyPagingItems()
+
     val context = LocalContext.current
     val currentUserId = remember { viewModel.getUserId(context) }
 
@@ -147,15 +152,11 @@ fun ForumFeedScreen(
                 onClick = onShareFeeling,
                 containerColor = Color(0xFF0D9488),
                 contentColor = Color.White,
-                icon = { Icon(Icons.Default.Create, null) },
+                icon = { Icon(Icons.Default.Edit, null) },
                 text = { Text("Comparte tu sentir") }
             )
         }
     ) { padding ->
-
-        // --- OPTIMIZACIÓN SKELETON LOADING ---
-        // En lugar de if/else con Box, usamos LazyColumn para ambos estados
-        // para mantener la estructura visual.
 
         LazyColumn(
             modifier = Modifier
@@ -175,30 +176,65 @@ fun ForumFeedScreen(
                 )
             }
 
-            if (posts.isEmpty()) {
-                // ESTADO DE CARGA: Mostramos 6 esqueletos
-                items(6) {
-                    PostItemSkeleton()
-                }
-            } else {
-                // ESTADO CON DATOS
+            // --- LÓGICA PRINCIPAL ---
+
+            // CASO A: PRIMERA CARGA (Refrescando todo)
+            if (posts.loadState.refresh is LoadState.Loading) {
+                items(6) { PostItemSkeleton() }
+            }
+            // CASO B: LISTA CON DATOS (O lista vacía pero cargada)
+            else {
                 items(
-                    items = posts,
-                    key = { post -> post.id }
-                ) { post ->
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            // Usa .animateItem() si tienes Compose 1.7+, sino .animateItemPlacement()
-                            .animateItem()
-                    ) {
-                        PostItem(
-                            post = post,
-                            currentUserId = currentUserId,
-                            onLikeClick = {
-                                viewModel.toggleLike(post, currentUserId)
-                            }
-                        )
+                    count = posts.itemCount,
+                    key = { index -> posts[index]?.id ?: index } // Clave única
+                ) { index ->
+                    val originalPost = posts[index]
+
+                    if (originalPost != null) {
+                        // LA FUSIÓN MÁGICA:
+                        // Si existe una versión modificada en localChanges, úsala.
+                        // Si no, usa el original que viene de Paging.
+                        val postToRender = localChanges[originalPost.id] ?: originalPost
+
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                // Nota: animateItemPlacement es más seguro en versiones anteriores de Compose
+
+                                .animateItem() // .animateItem() ya que se usa una dpendecia mas actual
+                        ) {
+                            PostItem(
+                                post = postToRender,
+                                currentUserId = currentUserId,
+                                onLikeClick = {
+                                    viewModel.toggleLike(postToRender, currentUserId)
+                                }
+                            )
+                        }
+                    }
+                }
+
+
+                // --- LÓGICA DE CARGA INFERIOR (Append / Scroll Infinito) ---
+                // Esto muestra el esqueleto SOLO abajo cuando arrastras para ver más
+                if (posts.loadState.append is LoadState.Loading) {
+                    item {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            PostItemSkeleton()
+                        }
+                    }
+                }
+
+                // --- MANEJO DE ERRORES AL CARGAR MÁS ---
+                if (posts.loadState.append is LoadState.Error) {
+                    item {
+                        Button(
+                            onClick = { posts.retry() },
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
+                        ) {
+                            Text("Error de conexión. Toca para reintentar.")
+                        }
                     }
                 }
             }
