@@ -1,4 +1,6 @@
-// Archivo: App.kt
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +14,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -34,10 +35,8 @@ import com.example.desde_mi_rincon_app_01.ui.screens.weekly.WeeklyScreen
 @Composable
 fun App() {
     val navController = rememberNavController()
-    // Obtenemos la ruta actual en tiempo real para saber dónde estamos
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
 
     val screens = listOf(
         AppScreen.Home,
@@ -47,14 +46,10 @@ fun App() {
         AppScreen.Challenges
     )
 
-    // BOX RAÍZ: Contiene la App completa y el Chatbot flotando encima
     Box(modifier = Modifier.fillMaxSize()) {
-
         Scaffold(
-            // Barra de navegación minimalista
-            // 2. LÓGICA CONDICIONAL PARA LA BARRA
             bottomBar = {
-                // Solo mostramos la barra SI la ruta actual NO es Splash
+                // La barra solo se renderiza si no estamos en Splash
                 if (currentRoute != AppScreen.Splash.route) {
                     NavigationBar(
                         containerColor = Color.White,
@@ -62,7 +57,7 @@ fun App() {
                         modifier = Modifier.shadow(16.dp)
                     ) {
                         screens.forEach { screen ->
-                            val isSelected = currentRoute == screen.route // Simplificado
+                            val isSelected = currentRoute == screen.route
                             NavigationBarItem(
                                 icon = {
                                     Icon(
@@ -72,7 +67,7 @@ fun App() {
                                     )
                                 },
                                 label = {
-                                    if(isSelected) {
+                                    if (isSelected) {
                                         Text(
                                             screen.title,
                                             style = MaterialTheme.typography.labelSmall,
@@ -102,76 +97,108 @@ fun App() {
             }
         ) { innerPadding ->
 
-            // CONTENEDOR DE PANTALLAS
+            // --- CORRECCIÓN IMPORTANTE ---
+            // Quitamos el modifier.padding(innerPadding) del NavHost.
+            // Esto evita que el Splash se encoja cuando aparece la barra.
             NavHost(
                 navController = navController,
-                startDestination = AppScreen.Splash.route,
-                // IMPORTANTE: Si estamos en Splash, no aplicamos el padding del Scaffold
-                // para que el color cubra toda la pantalla, incluso detrás de la barra de estado.
-                modifier = Modifier.padding(
-                    if (currentRoute == AppScreen.Splash.route) PaddingValues(0.dp) else innerPadding
-                )
+                startDestination = AppScreen.Splash.route
             ) {
-                composable(AppScreen.Home.route) { HomeScreen() }
 
-
-                // CAMBIO 2: Definir la pantalla Splash
-                composable(AppScreen.Splash.route) {
+                // 1. PANTALLA SPLASH (Configuramos su SALIDA)
+                composable(
+                    route = AppScreen.Splash.route,
+                    exitTransition = {
+                        // Cuando el Splash se vaya, que haga un Fade Out (se vuelva transparente)
+                        // tween(1000) significa "hazlo en 1000 milisegundos (1 segundo)"
+                        fadeOut(animationSpec = tween(1000))
+                    }
+                ) {
                     SplashScreen(
                         onNavigateToHome = {
                             navController.navigate(AppScreen.Home.route) {
-                                // TRUCO PRO: Esto borra el Splash del historial.
-                                // Si el usuario da "Atrás" en el Home, se sale de la app,
-                                // no vuelve a la pantalla de carga.
                                 popUpTo(AppScreen.Splash.route) { inclusive = true }
                             }
                         }
                     )
                 }
+                // 2. PANTALLA HOME (Con Animación de Entrada y Padding Manual)
+                composable(
+                    route = AppScreen.Home.route,
+                    enterTransition = {
+                        // Fade In suave de 1 segundo
+                        fadeIn(animationSpec = tween(1000))
+                    }
+                ) {
+                    // APLICAMOS EL PADDING AQUÍ, DENTRO DE LA PANTALLA
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        HomeScreen()
+                    }
+                }
 
-                // --- FLUJO FORO ---
+                // --- RESTO DE PANTALLAS (Aplicamos padding igual que en Home) ---
+
                 composable(AppScreen.Forum.route) {
-                    ForumSelectionScreen(
-                        onEmotionSelected = { emotion ->
-                            navController.navigate(AppScreen.ForumWrite.createRoute(emotion))
-                        },
-                        onGoToFeed = {
-                            navController.navigate(AppScreen.CommunityFeed.route)
-                        }
-                    )
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        ForumSelectionScreen(
+                            onEmotionSelected = { emotion ->
+                                navController.navigate(AppScreen.ForumWrite.createRoute(emotion))
+                            },
+                            onGoToFeed = {
+                                navController.navigate(AppScreen.CommunityFeed.route)
+                            }
+                        )
+                    }
                 }
 
                 composable(AppScreen.CommunityFeed.route) {
-                    ForumFeedScreen(
-                        onShareFeeling = {
-                            navController.navigate(AppScreen.Forum.route) {
-                                popUpTo(AppScreen.CommunityFeed.route) { saveState = true }
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        ForumFeedScreen(
+                            onShareFeeling = {
+                                navController.navigate(AppScreen.Forum.route) {
+                                    popUpTo(AppScreen.CommunityFeed.route) { saveState = true }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
 
-                // CORRECCIÓN: Eliminado el bloque duplicado, dejado solo este con argumentos
                 composable(
                     route = AppScreen.ForumWrite.route,
                     arguments = listOf(navArgument("emotion") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val emotion = backStackEntry.arguments?.getString("emotion") ?: "General"
-                    ForumWriteScreen(
-                        emotionName = emotion,
-                        onBack = { navController.popBackStack() }
-                    )
+                    // Nota: Quizás ForumWrite no necesita bottomBar o padding si es pantalla completa
+                    // Si lo necesita, envuélvelo en Box(padding) también.
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        ForumWriteScreen(
+                            emotionName = emotion,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
-                // ------------------
 
-                composable(AppScreen.Capsules.route) { CapsulesScreen() }
-                composable(AppScreen.Weekly.route) { WeeklyScreen() }
-                composable(AppScreen.Challenges.route) { ChallengesScreen() }
+                composable(AppScreen.Capsules.route) {
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        CapsulesScreen()
+                    }
+                }
+
+                composable(AppScreen.Weekly.route) {
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        WeeklyScreen()
+                    }
+                }
+
+                composable(AppScreen.Challenges.route) {
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        ChallengesScreen()
+                    }
+                }
             }
         }
 
-        // EL CHATBOT FLOTA SOBRE EL SCAFFOLD
-        // Gracias al z-index natural del Box, este componente se dibuja AL FINAL, quedando encima.
+        // Chatbot Overlay
         if (currentRoute != AppScreen.Splash.route) {
             ChatBotOverlay(bottomOffset = 135.dp)
         }

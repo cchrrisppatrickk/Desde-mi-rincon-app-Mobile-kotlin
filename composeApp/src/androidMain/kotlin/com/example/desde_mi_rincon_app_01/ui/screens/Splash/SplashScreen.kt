@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SplashScreen(onNavigateToHome: () -> Unit) {
 
-    // 1. Configuración de Coil para GIFs
+    // 1. Configuración de Coil
     val context = LocalContext.current
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -48,56 +48,66 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
         }
         .build()
 
-    // 2. Estados de Animación para el TEXTO
-    // Alpha: Opacidad (de 0 invisible a 1 visible)
+    // 2. Estados de Animación de ENTRADA
     val textAlpha = remember { Animatable(0f) }
-    // OffsetY: Posición vertical (empieza 50 pixeles abajo y sube a 0)
     val textOffsetY = remember { Animatable(50f) }
 
-    // 3. Orquestador de Tiempos
+    // 3. NUEVO: Estado de Animación de SALIDA (Empieza visible = 1f)
+    val contentExitAlpha = remember { Animatable(1f) }
+
+    // 4. Orquestador de Tiempos
     LaunchedEffect(key1 = true) {
 
-        // A. El GIF empieza a cargar inmediatamente al abrir la pantalla...
-
-        // B. Esperamos un poquito (ej. 300ms) para que el GIF tome protagonismo
+        // A. Espera inicial para el GIF
         delay(300)
 
-        // C. Iniciamos la animación del TEXTO (Lanzamos corrutinas paralelas)
+        // B. Animación de ENTRADA del texto
         launch {
             textAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 1000) // Tarda 1 seg en aparecer
+                animationSpec = tween(durationMillis = 1000)
             )
         }
         launch {
             textOffsetY.animateTo(
-                targetValue = 0f, // Sube a su posición original
-                animationSpec = tween(
-                    durationMillis = 1000,
-                    easing = FastOutSlowInEasing // Efecto de frenado suave al final
-                )
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
             )
         }
 
-        // D. Esperamos el tiempo total que quieres que dure el Splash (ej. 3.5 segundos total)
-        delay(3200)
+        // C. Tiempo de lectura (Mantener la pantalla visible)
+        // Reduje un poco este tiempo para dar espacio a la animación de salida
+        delay(2500)
 
-        // E. Navegamos
+        // D. NUEVO: Animación de SALIDA (Desvanecer todo)
+        contentExitAlpha.animateTo(
+            targetValue = 0f, // Se vuelve invisible
+            animationSpec = tween(durationMillis = 800) // Tarda casi un segundo en desvanecerse
+        )
+
+        // E. Navegar
         onNavigateToHome()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0D9488)), // Color Teal
+            .background(Color(0xFF0D9488)), // Fondo Teal
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-            // --- EL GIF ---
+        // Envolvemos el contenido principal en una Columna que obedece a 'contentExitAlpha'
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.graphicsLayer {
+                // AQUÍ ESTÁ LA CLAVE:
+                // Si contentExitAlpha baja a 0, todo esto desaparece suavemente.
+                alpha = contentExitAlpha.value
+            }
+        ) {
+            // GIF
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(R.drawable.mi_logo_animado) // Tu archivo GIF
+                    .data(R.drawable.mi_logo_animado)
                     .build(),
                 imageLoader = imageLoader,
                 contentDescription = "Logo animado",
@@ -106,22 +116,22 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- EL TEXTO ANIMADO ---
+            // TEXTO
             Text(
                 text = "Desde mi rincón",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    // APLICAMOS LA MAGIA AQUÍ:
-                    .graphicsLayer {
-                        alpha = textAlpha.value       // Aplica la transparencia actual
-                        translationY = textOffsetY.value // Aplica la posición actual
-                    }
+                modifier = Modifier.graphicsLayer {
+                    // Combinamos la opacidad de entrada (textAlpha) con la de salida general
+                    // Si no estamos saliendo, usa textAlpha. Si estamos saliendo, usa contentExitAlpha.
+                    alpha = textAlpha.value
+                    translationY = textOffsetY.value
+                }
             )
         }
 
-        // Texto pequeño al pie (Opcional: también podrías animarlo igual si quisieras)
+        // Texto pequeño al pie (También se desvanece al salir)
         Text(
             text = "Tu espacio seguro",
             style = MaterialTheme.typography.bodySmall,
@@ -130,7 +140,12 @@ fun SplashScreen(onNavigateToHome: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 64.dp)
                 .graphicsLayer {
-                    alpha = textAlpha.value // Que aparezca junto con el título
+                    // Truco matemático: Multiplicamos las opacidades.
+                    // Entrada * Salida.
+                    // Al inicio: 0 * 1 = 0 (Invisible)
+                    // Al medio: 1 * 1 = 1 (Visible)
+                    // Al final: 1 * 0 = 0 (Se desvanece)
+                    alpha = textAlpha.value * contentExitAlpha.value
                 }
         )
     }
