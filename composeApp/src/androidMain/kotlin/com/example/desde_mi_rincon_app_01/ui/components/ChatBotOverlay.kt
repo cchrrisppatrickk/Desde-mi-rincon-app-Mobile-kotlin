@@ -1,11 +1,7 @@
 package com.example.desde_mi_rincon_app_01.ui.components
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,13 +13,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -34,11 +27,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// Colores personalizados para mantener consistencia
+// Colores personalizados
 private val TealPrimary = Color(0xFF0D9488)
-private val TealLight = Color(0xFFF0FDFA)
-private val SlateDark = Color(0xFF1E293B)
 private val SlateLight = Color(0xFFF8FAFC)
+private val SlateDark = Color(0xFF1E293B)
 
 data class ChatMessage(
     val text: String,
@@ -48,11 +40,11 @@ data class ChatMessage(
 
 @Composable
 fun ChatBotOverlay(
-
     bottomOffset: Dp = 100.dp
 ) {
-
     var isOpen by remember { mutableStateOf(false) }
+
+    // Estado de los mensajes
     val messages = remember { mutableStateListOf(
         ChatMessage("¡Hola! Soy Brote 🌱. ¿En qué te puedo orientar hoy?", false)
     )}
@@ -60,7 +52,7 @@ fun ChatBotOverlay(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    // Lógica del cerebro de Brote (Simplificada para el ejemplo)
+    // Lógica del cerebro de Brote
     fun getBotResponse(userText: String): String {
         val lower = userText.lowercase()
         return when {
@@ -86,35 +78,33 @@ fun ChatBotOverlay(
     }
 
     // --- UI ESTRUCTURA ---
-    // Usamos Box con fillMaxSize pero permitimos que los clics pasen a través de las áreas vacías
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // AQUÍ ESTÁ LA CLAVE:
-            // Usamos el bottomOffset para empujar todo el componente hacia arriba
+            // El padding asegura que el chat no choque con la barra de navegación
             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = bottomOffset),
         contentAlignment = Alignment.BottomEnd
     ) {
 
-        // 1. VENTANA DEL CHAT
+        // 1. VENTANA DEL CHAT (Se muestra solo si isOpen es true)
         AnimatedVisibility(
             visible = isOpen,
             enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
-            modifier = Modifier.padding(bottom = 80.dp) // Deja espacio para el botón flotante
+            modifier = Modifier.padding(bottom = 80.dp) // Espacio para no tapar el botón flotante
         ) {
             Surface(
                 modifier = Modifier
                     .width(320.dp)
                     .height(450.dp),
                 shape = RoundedCornerShape(24.dp),
-                shadowElevation = 12.dp, // Sombra suave y moderna
+                shadowElevation = 12.dp,
                 color = Color.White,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
 
-                    // HEADER MINIMALISTA
+                    // HEADER
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -160,9 +150,9 @@ fun ChatBotOverlay(
                         }
                     }
 
-                    // INPUT AREA
+                    // ÁREA DE INPUT
                     Surface(
-                        shadowElevation = 8.dp, // Elevación superior para separar input
+                        shadowElevation = 8.dp,
                         color = Color.White
                     ) {
                         Row(
@@ -191,7 +181,6 @@ fun ChatBotOverlay(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
 
-                            // Botón de enviar redondo
                             FilledIconButton(
                                 onClick = { sendMessage() },
                                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = TealPrimary),
@@ -205,7 +194,7 @@ fun ChatBotOverlay(
             }
         }
 
-        // 2. BOTÓN FLOTANTE (FAB)
+        // 2. BOTÓN FLOTANTE (FAB) CON LA PLANTITA
         FloatingActionButton(
             onClick = { isOpen = !isOpen },
             containerColor = if(isOpen) Color.White else TealPrimary,
@@ -216,9 +205,11 @@ fun ChatBotOverlay(
         ) {
             AnimatedContent(targetState = isOpen, label = "fab_anim") { open ->
                 if (open) {
+                    // Si está abierto, mostramos la X para cerrar
                     Icon(Icons.Default.Close, contentDescription = "Cerrar")
                 } else {
-                    Icon(Icons.Rounded.SmartToy, contentDescription = "Abrir Chat")
+                    // Si está cerrado, mostramos a Brote (la plantita)
+                    Text("🌱", fontSize = 28.sp)
                 }
             }
         }
@@ -231,7 +222,6 @@ fun ChatBubble(msg: ChatMessage) {
     val bgColor = if (msg.isUser) TealPrimary else Color.White
     val textColor = if (msg.isUser) Color.White else SlateDark
 
-    // Forma de burbuja estilo "Mensajería Moderna"
     val shape = if (msg.isUser) {
         RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
     } else {
@@ -243,7 +233,7 @@ fun ChatBubble(msg: ChatMessage) {
             color = bgColor,
             shape = shape,
             shadowElevation = if(msg.isUser) 2.dp else 1.dp,
-            modifier = Modifier.widthIn(max = 260.dp) // Ancho máximo del mensaje
+            modifier = Modifier.widthIn(max = 260.dp)
         ) {
             Text(
                 text = msg.text,
@@ -253,12 +243,5 @@ fun ChatBubble(msg: ChatMessage) {
                 lineHeight = 20.sp
             )
         }
-        // Timestamp pequeño (opcional)
-        Text(
-            text = if(msg.isUser) "Tú" else "Brote",
-            fontSize = 10.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp)
-        )
     }
 }
