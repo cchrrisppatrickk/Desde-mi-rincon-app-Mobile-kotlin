@@ -27,9 +27,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
-import com.example.desde_mi_rincon_app_01.ui.components.common.UserAvatar // (Ver paso 3)
+import com.example.desde_mi_rincon_app_01.ui.components.common.UserAvatar
+import com.example.desde_mi_rincon_app_01.utils.emotionsList // Asegúrate de importar esto
 import com.example.desde_mi_rincon_app_01.utils.getTimeAgo
-
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -39,8 +39,18 @@ fun PostItem(
     onLikeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val textLengthLimit = 135
 
-    val textLengthLimit = 100 // ← CAMBIA ESTE NÚMERO
+    // 1. OBTENER DATOS DE LA EMOCIÓN (Color y Emoji)
+    // Usamos remember para buscar en la lista solo si cambia la emoción del post
+    val emotionData = remember(post.emotion) {
+        emotionsList.find { it.name == post.emotion }
+    }
+
+    // Valores por defecto si por alguna razón no se encuentra la emoción
+    val emotionColor = emotionData?.color ?: Color(0xFFF1F5F9)
+    val emotionEmoji = emotionData?.emoji ?: "💭"
+    val emotionName = emotionData?.name ?: post.emotion
 
     // Memoizar cálculos costosos
     val isLiked by remember(post, currentUserId) {
@@ -62,7 +72,7 @@ fun PostItem(
     val likeColor = if (isLiked) Color(0xFFE11D48) else Color(0xFF94A3B8)
     val icon = if (isLiked) Icons.Filled.Favorite else Icons.Default.FavoriteBorder
 
-    // InteractionSource para el like (mejor manejo de estados)
+    // InteractionSource para el like
     val likeInteractionSource = remember { MutableInteractionSource() }
 
     ElevatedCard(
@@ -78,7 +88,7 @@ fun PostItem(
     ) {
         Column(
             modifier = Modifier
-                .padding(12.dp) // Reducir padding interno
+                .padding(12.dp)
                 .fillMaxWidth()
         ) {
             // --- ENCABEZADO ---
@@ -86,7 +96,7 @@ fun PostItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Avatar optimizado
+                // Avatar
                 UserAvatar(
                     name = post.author,
                     modifier = Modifier.size(40.dp)
@@ -94,6 +104,7 @@ fun PostItem(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // Columna de Nombre y Tiempo
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -113,7 +124,28 @@ fun PostItem(
                     )
                 }
 
-                // Like button optimizado
+                // --- NUEVO: CHIP DE EMOCIÓN ---
+                Surface(
+                    color = emotionColor, // El color pastel de la emoción
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(text = emotionEmoji, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = emotionName,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF475569) // Un gris oscuro para contraste legible
+                        )
+                    }
+                }
+
+                // Like button
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
