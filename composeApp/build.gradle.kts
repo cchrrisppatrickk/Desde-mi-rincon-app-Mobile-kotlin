@@ -77,13 +77,15 @@ dependencies {
     // Nota: Si usas BOM, puedes quitar la versión ":1.7.6" al final.
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
+
     // --- INTERFAZ DE USUARIO (COMPOSE MATERIAL 3) ---
     // Asegúrate de tener estas para que funcionen los componentes de UI
     implementation(platform("androidx.compose:compose-bom:2024.12.01")) // BOM para gestionar versiones
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    // Cambia la 1.2.1 por la 1.3.1
+    implementation("androidx.compose.material3:material3:1.3.1")
 
     // --- NAVEGACIÓN ---
     // Has puesto la versión 2.9.6, pero la estable actual ronda la 2.8.5.

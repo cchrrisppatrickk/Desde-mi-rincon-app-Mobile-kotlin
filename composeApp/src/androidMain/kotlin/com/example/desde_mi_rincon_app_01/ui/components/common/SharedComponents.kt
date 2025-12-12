@@ -16,7 +16,9 @@ import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -36,13 +38,15 @@ fun UserAvatar(name: String, modifier: Modifier) {
     val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
     val colorIndex = name.hashCode().absoluteValue % 5
     val avatarColors = listOf(Color(0xFFE0F2FE), Color(0xFFDCFCE7), Color(0xFFFAE8FF), Color(0xFFFEE2E2), Color(0xFFFEF3C7))
-    Box(contentAlignment = Alignment.Center, modifier = modifier.clip(CircleShape).background(avatarColors[colorIndex])) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier
+        .clip(CircleShape)
+        .background(avatarColors[colorIndex])) {
         Text(text = initials, fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 16.sp)
     }
 }
 
 //////////////////////////////
-// UserAvatar optimizado
+//UserAvatar optimizado
 //@Composable
 //fun UserAvatar(
 //    name: String,
@@ -76,7 +80,9 @@ fun UserAvatar(name: String, modifier: Modifier) {
 
 @Composable
 fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = emotion.color), shape = RoundedCornerShape(16.dp), modifier = Modifier.height(120.dp).clickable { onClick() }, elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = emotion.color), shape = RoundedCornerShape(16.dp), modifier = Modifier
+        .height(120.dp)
+        .clickable { onClick() }, elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(text = emotion.emoji, fontSize = 40.sp)
             Spacer(modifier = Modifier.height(8.dp))
@@ -88,7 +94,9 @@ fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {
 // Selector de modo (Escribir/Dibujar)
 @Composable
 fun ModeSelector(selectedMode: String, onModeSelected: (String) -> Unit, accentColor: Color) {
-    Row(modifier = Modifier.background(Color(0xFFE2E8F0), RoundedCornerShape(50)).padding(4.dp)) {
+    Row(modifier = Modifier
+        .background(Color(0xFFE2E8F0), RoundedCornerShape(50))
+        .padding(4.dp)) {
         ModeButton("Escribir", Icons.Outlined.Edit, selectedMode == "text", { onModeSelected("text") }, accentColor, Modifier.weight(1f))
         Spacer(modifier = Modifier.width(4.dp))
         ModeButton("Dibujar", Icons.Outlined.Brush, selectedMode == "draw", { onModeSelected("draw") }, accentColor, Modifier.weight(1f))

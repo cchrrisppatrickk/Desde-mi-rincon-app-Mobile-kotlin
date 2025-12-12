@@ -26,6 +26,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -127,16 +130,15 @@ fun ForumSelectionScreen(
 }
 
 
-// --- SCREEN 2: FEED ---
+
 // --- SCREEN 2: FEED (CORREGIDO) ---
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ForumFeedScreen(
     onShareFeeling: () -> Unit,
     viewModel: ForumViewModel = viewModel()
 ) {
-
-    // 1. OBSERVAMOS LOS CAMBIOS LOCALES (Para el Like instantáneo)
+    // 1. OBSERVAMOS LOS CAMBIOS LOCALES
     val localChanges by viewModel.localChanges.collectAsState()
 
     // 2. Recolectamos los items paginados
@@ -144,6 +146,13 @@ fun ForumFeedScreen(
 
     val context = LocalContext.current
     val currentUserId = remember { viewModel.getUserId(context) }
+
+    // 3. ESTADO DE REFRESCO (Simplificado para Material 1.3.1)
+    // Determinamos si está refrescando basándonos directamente en el estado de Paging 3
+    val isRefreshing = posts.loadState.refresh is LoadState.Loading
+
+    // El estado interno para el componente (opcional, pero útil para animaciones)
+    val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
         floatingActionButtonPosition = FabPosition.Center,
@@ -158,82 +167,98 @@ fun ForumFeedScreen(
         }
     ) { padding ->
 
-        LazyColumn(
+        // 4. USAMOS PullToRefreshBox (Nuevo en Material 1.3+)
+        // Este componente envuelve la lista y maneja automáticamente el gesto y el indicador.
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                // Al soltar, recargamos los datos de Paging
+                posts.refresh()
+            },
+            state = pullToRefreshState,
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // CABECERA (Siempre visible)
-            item {
-                Text(
-                    text = "Comunidad",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF334155),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            indicator = {
+                // Personalización del indicador (Opcional, para que sea Teal)
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = isRefreshing,
+                    containerColor = Color.White,
+                    color = Color(0xFF0D9488),
+                    state = pullToRefreshState
                 )
             }
-
-            // --- LÓGICA PRINCIPAL ---
-
-            // CASO A: PRIMERA CARGA (Refrescando todo)
-            if (posts.loadState.refresh is LoadState.Loading) {
-                items(6) { PostItemSkeleton() }
-            }
-            // CASO B: LISTA CON DATOS (O lista vacía pero cargada)
-            else {
-                items(
-                    count = posts.itemCount,
-                    key = { index -> posts[index]?.id ?: index } // Clave única
-                ) { index ->
-                    val originalPost = posts[index]
-
-                    if (originalPost != null) {
-                        // LA FUSIÓN MÁGICA:
-                        // Si existe una versión modificada en localChanges, úsala.
-                        // Si no, usa el original que viene de Paging.
-                        val postToRender = localChanges[originalPost.id] ?: originalPost
-
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                // Nota: animateItemPlacement es más seguro en versiones anteriores de Compose
-
-                                .animateItem() // .animateItem() ya que se usa una dpendecia mas actual
-                        ) {
-                            PostItem(
-                                post = postToRender,
-                                currentUserId = currentUserId,
-                                onLikeClick = {
-                                    viewModel.toggleLike(postToRender, currentUserId)
-                                }
-                            )
-                        }
-                    }
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // CABECERA
+                item {
+                    Text(
+                        text = "Comunidad",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF334155),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
 
+                // --- CORRECCIÓN AQUÍ ---
 
-                // --- LÓGICA DE CARGA INFERIOR (Append / Scroll Infinito) ---
-                // Esto muestra el esqueleto SOLO abajo cuando arrastras para ver más
-                if (posts.loadState.append is LoadState.Loading) {
-                    item {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            PostItemSkeleton()
+                // Si está cargando (ya sea al inicio O al hacer pull-to-refresh),
+                // MOSTRAR SIEMPRE LOS ESQUELETOS.
+                if (posts.loadState.refresh is LoadState.Loading) {
+                    items(6) { PostItemSkeleton() }
+                }
+                // Si NO está cargando, mostramos la lista real
+                else {
+                    items(
+                        count = posts.itemCount,
+                        key = { index -> posts[index]?.id ?: index }
+                    ) { index ->
+                        val originalPost = posts[index]
+
+                        if (originalPost != null) {
+                            val postToRender = localChanges[originalPost.id] ?: originalPost
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .animateItem()
+                            ) {
+                                PostItem(
+                                    post = postToRender,
+                                    currentUserId = currentUserId,
+                                    onLikeClick = {
+                                        viewModel.toggleLike(postToRender, currentUserId)
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-                // --- MANEJO DE ERRORES AL CARGAR MÁS ---
-                if (posts.loadState.append is LoadState.Error) {
-                    item {
-                        Button(
-                            onClick = { posts.retry() },
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
-                        ) {
-                            Text("Error de conexión. Toca para reintentar.")
+                    // --- ESQUELETO INFERIOR (SCROLL INFINITO) ---
+                    if (posts.loadState.append is LoadState.Loading) {
+                        item {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                PostItemSkeleton()
+                            }
+                        }
+                    }
+
+                    // --- ERROR AL BAJAR ---
+                    if (posts.loadState.append is LoadState.Error) {
+                        item {
+                            Button(
+                                onClick = { posts.retry() },
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.8f))
+                            ) {
+                                Text("Error de conexión. Toca para reintentar.")
+                            }
                         }
                     }
                 }
