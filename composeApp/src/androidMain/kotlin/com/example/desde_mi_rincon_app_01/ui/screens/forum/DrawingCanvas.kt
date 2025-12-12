@@ -4,73 +4,70 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun DrawingCanvas(
-    // NUEVO PARAMETRO: Callback para avisar al padre cuando el dibujo cambia
     onDrawingUpdated: (Bitmap?) -> Unit
 ) {
-    // 1. Estado para guardar la imagen (Bitmap) donde pintaremos
+    // 1. Estado para guardar la imagen (Bitmap)
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-    // 2. Necesitamos un Canvas de Android (clásico) para pintar sobre el Bitmap
-    // Usamos 'remember' para no recrearlo en cada recomposición
     val androidCanvas = remember { mutableStateOf<Canvas?>(null) }
 
-    // Configuración del Pincel (Paint clásico de Android es más rápido aquí)
+    // Estado para saber si el lienzo está vacío (para mostrar el placeholder)
+    var isEmpty by remember { mutableStateOf(true) }
+
+    // Configuración del Pincel
     val paint = remember {
         Paint().apply {
-            color = android.graphics.Color.parseColor("#0D9488") // Tu color Teal
+            color = android.graphics.Color.parseColor("#0D9488") // Teal
             isAntiAlias = true
-            strokeWidth = 10f
+            strokeWidth = 12f // Un poco más grueso para que se vea mejor
             style = Paint.Style.STROKE
             strokeJoin = Paint.Join.ROUND
             strokeCap = Paint.Cap.ROUND
         }
     }
 
-    // Guardamos la última posición para trazar líneas continuas
     var lastTouchX by remember { mutableFloatStateOf(0f) }
     var lastTouchY by remember { mutableFloatStateOf(0f) }
-
-    // Trigger para forzar a Compose a actualizar la imagen cuando pintamos
-    var refreshTrigger by remember { mutableStateOf(0) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(280.dp) // Un poco más alto para mayor comodidad
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.White)
+            // Agregamos un borde sutil para delimitar la zona
+            .border(BorderStroke(1.dp, Color(0xFFE2E8F0)), RoundedCornerShape(12.dp))
             .onSizeChanged { size ->
                 if (size.width > 0 && size.height > 0) {
-                    // Solo creamos uno nuevo si no existe para no perder el dibujo al rotar
                     if (bitmap == null) {
                         val newBitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
                         bitmap = newBitmap
@@ -83,10 +80,9 @@ fun DrawingCanvas(
                     onDragStart = { offset ->
                         lastTouchX = offset.x
                         lastTouchY = offset.y
+                        isEmpty = false // Al tocar, ocultamos el texto de ayuda
                     },
                     onDragEnd = {
-                        // OPTIMIZACIÓN: Solo enviamos el bitmap al padre cuando LEVANTA el dedo.
-                        // Hacerlo en cada frame (onDrag) sería muy lento.
                         onDrawingUpdated(bitmap)
                     },
                     onDrag = { change, _ ->
@@ -102,11 +98,33 @@ fun DrawingCanvas(
                 )
             }
     ) {
-        // Mostramos el Bitmap como una imagen estática
-        // Esto es súper rápido porque Compose solo renderiza 1 objeto (la imagen)
+        // 1. TEXTO DE FONDO (Placeholder)
+        // Se muestra solo si no se ha dibujado nada
+        AnimatedVisibility(
+            visible = isEmpty,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.Brush,
+                    contentDescription = null,
+                    tint = Color.LightGray,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Dibuja aquí tu emoción...",
+                    color = Color.LightGray,
+                    fontSize = 14.sp,
+                    fontStyle = FontStyle.Italic
+                )
+            }
+        }
+
+        // 2. EL DIBUJO REAL
         bitmap?.let { btm ->
-            // Usamos refreshTrigger en un bloque key o state read para asegurar recomposición
-            // Aunque al pasar 'btm.asImageBitmap()' a veces es suficiente, el trigger asegura fluidez
             key(refreshTrigger) {
                 Image(
                     bitmap = btm.asImageBitmap(),
@@ -116,24 +134,53 @@ fun DrawingCanvas(
             }
         }
 
-        // Botón Borrar
-        Button(
-            onClick = {
-                androidCanvas.value?.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-                refreshTrigger++
-                onDrawingUpdated(null) // Avisamos al padre que se borró
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White.copy(alpha = 0.9f),
-                contentColor = Color.Red
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+        // 3. BARRA DE HERRAMIENTAS (FLOTANTE)
+        // Usamos una fila en la parte superior derecha para los controles
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp),
-            shape = RoundedCornerShape(4.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Borrar", fontSize = 12.sp)
+
+            // Indicador de Pincel (Visual)
+            Surface(
+                color = Color(0xFF0D9488).copy(alpha = 0.1f),
+                shape = CircleShape,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Brush,
+                        contentDescription = "Pincel",
+                        tint = Color(0xFF0D9488),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Botón Borrar (Ahora es un Icono rojo sutil)
+            FilledTonalIconButton(
+                onClick = {
+                    androidCanvas.value?.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+                    refreshTrigger++
+                    onDrawingUpdated(null)
+                    isEmpty = true // Vuelve a mostrar el texto de ayuda
+                },
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = Color(0xFFFEE2E2), // Rojo muy claro
+                    contentColor = Color(0xFFEF4444)    // Rojo intenso
+                ),
+                modifier = Modifier.size(32.dp) // Botón pequeño y discreto
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Borrar todo",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

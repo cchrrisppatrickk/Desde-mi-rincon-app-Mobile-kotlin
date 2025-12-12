@@ -362,6 +362,7 @@ fun ForumWriteScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth()
+                    .animateContentSize()
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

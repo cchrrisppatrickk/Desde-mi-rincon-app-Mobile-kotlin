@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,40 +34,46 @@ import androidx.compose.ui.unit.sp
 import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
 import kotlin.math.absoluteValue
 
-@Composable
-fun UserAvatar(name: String, modifier: Modifier) {
-    val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
-    val colorIndex = name.hashCode().absoluteValue % 5
-    val avatarColors = listOf(Color(0xFFE0F2FE), Color(0xFFDCFCE7), Color(0xFFFAE8FF), Color(0xFFFEE2E2), Color(0xFFFEF3C7))
-    Box(contentAlignment = Alignment.Center, modifier = modifier
-        .clip(CircleShape)
-        .background(avatarColors[colorIndex])) {
-        Text(text = initials, fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 16.sp)
-    }
-}
-
-//////////////////////////////
-//UserAvatar optimizado
 //@Composable
 //fun UserAvatar(
 //    name: String,
-//    modifier: Modifier = Modifier
+//    modifier: Modifier = Modifier,
+//    useGradient: Boolean = false
 //) {
-//    val backgroundColor by remember(name) {
+//    // Pares de colores complementarios
+//    val colorPairs = listOf(
+//        Pair(Color(0xFF0D9488), Color(0xFF14B8A6)), // Teal
+//        Pair(Color(0xFF3B82F6), Color(0xFF60A5FA)), // Blue
+//        Pair(Color(0xFF8B5CF6), Color(0xFFA78BFA)), // Violet
+//        Pair(Color(0xFFEF4444), Color(0xFFF87171)), // Red
+//        Pair(Color(0xFFF59E0B), Color(0xFFFBBF24)), // Amber
+//        Pair(Color(0xFF10B981), Color(0xFF34D399)), // Emerald
+//        Pair(Color(0xFFEC4899), Color(0xFFF472B6)), // Pink
+//        Pair(Color(0xFF6366F1), Color(0xFF818CF8)), // Indigo
+//        Pair(Color(0xFF8B5CF6), Color(0xFFC4B5FD)), // Light Violet
+//        Pair(Color(0xFF059669), Color(0xFF10B981))  // Green
+//    )
+//
+//    val colorPair by remember(name) {
 //        derivedStateOf {
-//            when ((name.hashCode() % 5).absoluteValue) {
-//                0 -> Color(0xFF0D9488)
-//                1 -> Color(0xFF3B82F6)
-//                2 -> Color(0xFF8B5CF6)
-//                3 -> Color(0xFFEF4444)
-//                else -> Color(0xFFF59E0B)
-//            }
+//            colorPairs[(name.hashCode() % colorPairs.size).absoluteValue]
 //        }
 //    }
 //
 //    Box(
 //        modifier = modifier
-//            .background(backgroundColor, CircleShape)
+//            .background(
+//                brush = if (useGradient) {
+//                    Brush.linearGradient(
+//                        colors = listOf(colorPair.first, colorPair.second),
+//                        start = Offset(0f, 0f),
+//                        end = Offset.Infinite
+//                    )
+//                } else {
+//                    SolidColor(colorPair.first)
+//                },
+//                shape = CircleShape
+//            )
 //            .clip(CircleShape),
 //        contentAlignment = Alignment.Center
 //    ) {
@@ -77,6 +84,71 @@ fun UserAvatar(name: String, modifier: Modifier) {
 //        )
 //    }
 //}
+
+//@Composable
+//fun UserAvatar(name: String, modifier: Modifier) {
+//    val initials = if (name.isNotBlank()) name.take(1).uppercase() else "?"
+//    val colorIndex = name.hashCode().absoluteValue % 5
+//    val avatarColors = listOf(Color(0xFFE0F2FE), Color(0xFFDCFCE7), Color(0xFFFAE8FF), Color(0xFFFEE2E2), Color(0xFFFEF3C7))
+//    Box(contentAlignment = Alignment.Center, modifier = modifier
+//        .clip(CircleShape)
+//        .background(avatarColors[colorIndex])) {
+//        Text(text = initials, fontWeight = FontWeight.Bold, color = Color(0xFF475569), fontSize = 16.sp)
+//    }
+//}
+
+//////////////////////////////
+//UserAvatar optimizado
+@Composable
+fun UserAvatar(
+    name: String,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor by remember(name) {
+        derivedStateOf {
+            // Lista de 15 colores bien contrastados
+            val colors = listOf(
+                Color(0xFF0D9488), // Teal
+                Color(0xFF3B82F6), // Blue
+                Color(0xFF8B5CF6), // Violet
+                Color(0xFFEF4444), // Red
+                Color(0xFFF59E0B), // Amber
+                Color(0xFF10B981), // Emerald
+                Color(0xFFEC4899), // Pink
+                Color(0xFF6366F1), // Indigo
+                Color(0xFF84CC16), // Lime
+                Color(0xFF06B6D4), // Cyan
+                Color(0xFF8B5CF6), // Purple
+                Color(0xFFF97316), // Orange
+                Color(0xFFA855F7), // Fuchsia
+                Color(0xFF64748B), // Slate
+                Color(0xFF14B8A6)  // Teal-500
+            )
+            colors[(name.hashCode() % colors.size).absoluteValue]
+        }
+    }
+
+    // Determinar si el color es oscuro para usar texto blanco o negro
+    val textColor = remember(backgroundColor) {
+        val luminance = 0.299 * backgroundColor.red +
+                0.587 * backgroundColor.green +
+                0.114 * backgroundColor.blue
+        if (luminance > 0.5) Color.Black else Color.White
+    }
+
+    Box(
+        modifier = modifier
+            .background(backgroundColor, CircleShape)
+            .clip(CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+            color = textColor,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
 
 @Composable
 fun EmotionCard(emotion: EmotionItem, onClick: () -> Unit) {

@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -28,6 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.example.desde_mi_rincon_app_01.ui.components.common.UserAvatar
 import com.example.desde_mi_rincon_app_01.utils.emotionsList
@@ -74,43 +78,70 @@ fun PostItem(
     val icon = if (isLiked) Icons.Filled.Favorite else Icons.Default.FavoriteBorder
     val likeInteractionSource = remember { MutableInteractionSource() }
 
-    // --- DIÁLOGO DE IMAGEN PANTALLA COMPLETA ---
+    // --- DIÁLOGO DE IMAGEN CON ESTADO DE CARGA ---
     if (showImageDialog && post.drawingUrl != null) {
         Dialog(
             onDismissRequest = { showImageDialog = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false) // Ocupa todo el ancho
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.9f)) // Fondo oscuro
-                    .clickable { showImageDialog = false }, // Click fuera cierra
+                    .background(Color.Black.copy(alpha = 0.85f))
+                    .clickable { showImageDialog = false },
                 contentAlignment = Alignment.Center
             ) {
-                // Imagen Grande
-                AsyncImage(
-                    model = post.drawingUrl,
+                // Usamos SubcomposeAsyncImage para controlar el estado de carga
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(post.drawingUrl)
+                        .crossfade(true) // Transición suave al aparecer
+                        .build(),
                     contentDescription = "Dibujo expandido",
                     modifier = Modifier
-                        .fillMaxWidth(0.95f) // Casi todo el ancho
-                        .fillMaxHeight(0.8f) // 80% del alto
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White), // Fondo blanco por si el dibujo es PNG transparente
-                    contentScale = ContentScale.Fit // Ajustar para ver todo el dibujo sin cortar
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.Fit,
+                    // ESTO ES LO NUEVO:
+                    loading = {
+                        Box(
+                            modifier = Modifier.size(50.dp), // Tamaño del área de carga
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    },
+                    error = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Image, // O un icono de "broken image"
+                                contentDescription = "Error",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text("No se pudo cargar", color = Color.Gray)
+                        }
+                    }
                 )
 
-                // Botón Cerrar (Esquina superior derecha)
+                // BOTÓN CERRAR (Igual que antes)
                 IconButton(
                     onClick = { showImageDialog = false },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .background(Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50))
+                        .padding(top = 48.dp, end = 24.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cerrar",
-                        tint = Color.White
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
