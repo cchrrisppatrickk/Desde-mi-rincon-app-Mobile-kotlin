@@ -126,5 +126,12 @@ dependencies {
 
     // Para usar .await() con Firebase
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+
+
+    // Coil para cargar imágenes y GIFs
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-gif:2.5.0")
+
 }
 
