@@ -13,6 +13,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material3.*
@@ -26,6 +31,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,27 +41,38 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen() {
-    // Estado del scroll para efectos y navegación
     val scrollState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     LazyColumn(
         state = scrollState,
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC)) // Fondo Slate-50 más suave
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8FAFC))
     ) {
-        // 1. SECCIÓN HERO (Con Animaciones)
+        // 1. HERO (PORTADA)
         item {
             HeroSection(
                 onEnterClick = {
-                    // Scroll suave hacia la misión (ítem índice 1)
                     coroutineScope.launch {
+                        // Scroll suave hacia la sección de herramientas
                         scrollState.animateScrollToItem(1)
                     }
                 }
             )
         }
 
-        // 2. SECCIÓN MISIÓN Y VISIÓN
+        // 2. FRASE DEL DÍA
+        item {
+            DailyQuoteSection()
+        }
+
+        // 3. GUÍA DE HERRAMIENTAS
+        item {
+            AppFeaturesSection()
+        }
+
+        // 4. MISIÓN Y VISIÓN
         item {
             MissionVisionSection()
         }
@@ -67,21 +84,19 @@ fun HomeScreen() {
     }
 }
 
+// --- COMPONENTES ---
+
 @Composable
 fun HeroSection(onEnterClick: () -> Unit) {
-    // Estado para disparar la animación al iniciar
     var isVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        isVisible = true
-    }
+    LaunchedEffect(Unit) { isVisible = true }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(550.dp) // Un poco más alto para mayor impacto
+            .height(550.dp)
     ) {
-        // A. Imagen de Fondo
         Image(
             painter = painterResource(id = R.drawable.home_hero),
             contentDescription = "Ambiente tranquilo",
@@ -89,7 +104,6 @@ fun HeroSection(onEnterClick: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // B. Capa oscura (Scrim) con degradado mejorado
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -97,31 +111,33 @@ fun HeroSection(onEnterClick: () -> Unit) {
                     Brush.verticalGradient(
                         colors = listOf(
                             Color.Black.copy(alpha = 0.2f),
-                            Color.Black.copy(alpha = 0.6f),
-                            Color.Black.copy(alpha = 0.8f) // Más oscuro abajo para leer mejor
+                            Color.Black.copy(alpha = 0.5f),
+                            Color.Black.copy(alpha = 0.9f)
                         )
                     )
                 )
         )
 
-        // C. Contenido Animado
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Animación del Título: Aparece desde abajo
+            // TÍTULO ANIMADO
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(animationSpec = tween(1000)) +
-                        slideInVertically(initialOffsetY = { 50 }, animationSpec = tween(1000))
+                        slideInVertically(
+                            initialOffsetY = { 50 }, // CORREGIDO: Uso explícito del nombre
+                            animationSpec = tween(1000)
+                        )
             ) {
                 Text(
                     text = "A veces, cuidar a otros\nagota tu propia luz.",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        lineHeight = 44.sp // Mejor interlineado
+                        lineHeight = 44.sp
                     ),
                     color = Color.White,
                     textAlign = TextAlign.Center
@@ -130,50 +146,47 @@ fun HeroSection(onEnterClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Animación del Subtítulo: Aparece un poco después (delay)
+            // SUBTÍTULO ANIMADO
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(animationSpec = tween(1000, delayMillis = 300)) +
-                        slideInVertically(initialOffsetY = { 50 }, animationSpec = tween(1000, delayMillis = 300))
+                        slideInVertically(
+                            initialOffsetY = { 50 }, // CORREGIDO
+                            animationSpec = tween(1000, delayMillis = 300)
+                        )
             ) {
                 Text(
                     text = "Bienvenido a \"Desde mi rincón\". Tu espacio seguro para ser vulnerable, auténtico y encontrar fuerza.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 18.sp
-                    ),
-                    color = Color(0xFFE2E8F0), // Slate-200 para mejor contraste
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                    color = Color(0xFFE2E8F0),
                     textAlign = TextAlign.Center
                 )
             }
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Animación del Botón
+            // BOTÓN ANIMADO
             AnimatedVisibility(
                 visible = isVisible,
                 enter = fadeIn(animationSpec = tween(1000, delayMillis = 600)) +
-                        slideInVertically(initialOffsetY = { 50 }, animationSpec = tween(1000, delayMillis = 600))
+                        slideInVertically(
+                            initialOffsetY = { 50 }, // CORREGIDO
+                            animationSpec = tween(1000, delayMillis = 600)
+                        )
             ) {
                 Button(
                     onClick = onEnterClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF0D9488), // Teal-600
+                        containerColor = Color(0xFF0D9488),
                         contentColor = Color.White
                     ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 8.dp,
-                        pressedElevation = 2.dp
-                    ),
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .height(56.dp)
-                        .width(220.dp) // Ancho fijo para elegancia
+                        .width(220.dp)
                 ) {
-                    Text(
-                        text = "Entra al rincón",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("Entra al rincón", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(Icons.Default.ArrowDownward, contentDescription = null)
                 }
@@ -182,26 +195,152 @@ fun HeroSection(onEnterClick: () -> Unit) {
     }
 }
 
+// --- NUEVO COMPONENTE: FRASE DEL DÍA ---
+@Composable
+fun DailyQuoteSection() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .offset(y = (-40).dp)
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF9C3)),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.FormatQuote,
+                    contentDescription = null,
+                    tint = Color(0xFFD97706),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .graphicsLayer(rotationZ = 180f)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "Recordatorio de hoy",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFB45309),
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "No tienes que poder con todo tú solo. Pedir ayuda también es un acto de valentía.",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
+                        color = Color(0xFF78350F)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- NUEVO COMPONENTE: CARACTERÍSTICAS DE LA APP ---
+@Composable
+fun AppFeaturesSection() {
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 0.dp)) {
+        Text(
+            text = "Tus Herramientas",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF334155),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        FeatureCard(
+            title = "Muro de Emociones",
+            desc = "Valida lo que sientes. Lee y escribe mensajes anónimos según tu emoción actual.",
+            icon = Icons.Default.Forum,
+            color = Color(0xFF0D9488)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FeatureCard(
+            title = "Lienzo de Expresión",
+            desc = "Cuando no hay palabras, dibuja. Arteterapia digital para liberar tensión.",
+            icon = Icons.Default.Brush,
+            color = Color(0xFFDB2777)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FeatureCard(
+            title = "Ruleta de Retos",
+            desc = "¿Atascado? Gira la ruleta para recibir un pequeño reto cultural o de bienestar.",
+            icon = Icons.Default.Psychology,
+            color = Color(0xFFD97706)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FeatureCard(
+            title = "Cápsulas de Video",
+            desc = "Contenido multimedia creado por la comunidad para inspirarte.",
+            icon = Icons.Default.Videocam,
+            color = Color(0xFF4F46E5)
+        )
+    }
+}
+
+@Composable
+fun FeatureCard(title: String, desc: String, icon: ImageVector, color: Color) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = color.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(text = title, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                Text(text = desc, style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+            }
+        }
+    }
+}
+
+
 @Composable
 fun MissionVisionSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp)
-            .offset(y = (-40).dp) // Efecto visual: Las tarjetas "suben" sobre el hero
     ) {
-        // --- TARJETA MISIÓN ---
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFE2E8F0)))
+        Spacer(modifier = Modifier.height(32.dp))
+
         InfoCard(
             title = "Misión",
             icon = Icons.Outlined.Explore,
             colorTheme = Color(0xFF0D9488),
-            backgroundColor = Color.White, // Blanco puro para resaltar sobre el fondo gris
+            backgroundColor = Color.White,
             content = "Crear un espacio íntimo y auténtico donde las y los jóvenes puedan sentirse acompañados. Buscamos conectar desde la vulnerabilidad y la creatividad para construir una juventud más consciente."
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- TARJETA VISIÓN ---
         InfoCard(
             title = "Visión",
             icon = Icons.Default.Visibility,
@@ -222,34 +361,33 @@ fun InfoCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        shape = RoundedCornerShape(24.dp), // Más redondeado
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // Más sombra
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(24.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Barra lateral decorativa
             Box(
                 modifier = Modifier
                     .width(4.dp)
-                    .height(80.dp) // Altura fija estética
+                    .height(80.dp)
                     .background(colorTheme, RoundedCornerShape(50))
             )
 
             Spacer(modifier = Modifier.width(20.dp))
 
             Column {
-                // Encabezado con Icono
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         color = colorTheme.copy(alpha = 0.1f),
                         shape = CircleShape,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier
+                            .size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(icon, contentDescription = null, tint = colorTheme, modifier = Modifier.size(24.dp))
+                            Icon(icon, null, tint = colorTheme, modifier = Modifier.size(24.dp))
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -269,7 +407,7 @@ fun InfoCard(
                         lineHeight = 24.sp,
                         letterSpacing = 0.5.sp
                     ),
-                    color = Color(0xFF475569), // Slate-600
+                    color = Color(0xFF475569),
                     textAlign = TextAlign.Start
                 )
             }
