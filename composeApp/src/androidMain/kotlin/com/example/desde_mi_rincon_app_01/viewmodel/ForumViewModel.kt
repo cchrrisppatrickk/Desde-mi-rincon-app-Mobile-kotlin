@@ -1,6 +1,7 @@
 package com.example.desde_mi_rincon_app_01.viewmodel
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -8,6 +9,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import com.example.desde_mi_rincon_app_01.data.ForumPagingSource
 import com.example.desde_mi_rincon_app_01.data.model.ForumPost
+import com.example.desde_mi_rincon_app_01.utils.CloudinaryManager
 import com.example.desde_mi_rincon_app_01.utils.randomNames
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -46,30 +48,57 @@ class ForumViewModel : ViewModel() {
     private val _localChanges = MutableStateFlow<Map<String, ForumPost>>(emptyMap())
     val localChanges: StateFlow<Map<String, ForumPost>> = _localChanges
 
-    fun sendPost(emotion: String, message: String, inputName: String) {
-        if (message.isBlank()) {
-            _status.value = "El mensaje no puede estar vacío."
+    // Función actualizada: Ahora recibe un Bitmap opcional
+    fun sendPost(emotion: String, message: String, inputName: String, imageBitmap: Bitmap?) {
+
+        // Validación: Debe haber texto O dibujo. No enviar nada vacío.
+        if (message.isBlank() && imageBitmap == null) {
+            _status.value = "Escribe algo o haz un dibujo."
             return
         }
 
         val finalAuthor = if (inputName.isBlank()) randomNames.random() else inputName
 
-        val newPost = ForumPost(
-            emotion = emotion,
-            message = message,
-            author = finalAuthor
-        )
-
         viewModelScope.launch {
-            // Limpiamos estados previos
-            _status.value = null
-            val newDocRef = db.collection("posts").document() // Genera ID antes
-            val postWithId = newPost.copy(id = newDocRef.id) // Asigna el ID al objeto
+            _status.value = "Publicando..." // Feedback visual
 
+            try {
+                // 1. SI HAY IMAGEN, SUBIRLA PRIMERO A CLOUDINARY
+                var uploadedImageUrl: String? = null
 
-            newDocRef.set(postWithId) // Guarda usando set() en lugar de add()
-                .addOnSuccessListener { _showSuccessDialog.value = true }
-                .addOnFailureListener { _status.value = "Error..." }
+                if (imageBitmap != null) {
+                    _status.value = "Subiendo dibujo..."
+                    // Esta línea espera (suspends) hasta que Cloudinary responda
+                    uploadedImageUrl = CloudinaryManager.uploadBitmap(imageBitmap)
+                }
+
+                // 2. PREPARAR EL POST PARA FIRESTORE
+                _status.value = "Guardando..."
+
+                val newDocRef = db.collection("posts").document()
+
+                val newPost = ForumPost(
+                    id = newDocRef.id,
+                    emotion = emotion,
+                    message = message,
+                    author = finalAuthor,
+                    drawingUrl = uploadedImageUrl // Aquí va la URL que nos dio Cloudinary (o null)
+                )
+
+                // 3. GUARDAR EN FIRESTORE
+                newDocRef.set(newPost)
+                    .addOnSuccessListener {
+                        _showSuccessDialog.value = true
+                        _status.value = null
+                    }
+                    .addOnFailureListener { e ->
+                        _status.value = "Error al guardar: ${e.message}"
+                    }
+
+            } catch (e: Exception) {
+                // Error en la subida de imagen
+                _status.value = "Error subiendo imagen: ${e.message}"
+            }
         }
     }
 

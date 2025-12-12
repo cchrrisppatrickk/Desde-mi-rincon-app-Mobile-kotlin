@@ -133,5 +133,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("io.coil-kt:coil-gif:2.5.0")
 
+    // Cloudinary para Android
+    implementation("com.cloudinary:cloudinary-android:2.5.0")
+
 }
 

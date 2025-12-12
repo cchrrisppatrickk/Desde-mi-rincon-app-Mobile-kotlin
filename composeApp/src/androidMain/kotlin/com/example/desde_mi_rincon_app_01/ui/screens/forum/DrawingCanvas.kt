@@ -32,7 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun DrawingCanvas() {
+fun DrawingCanvas(
+    // NUEVO PARAMETRO: Callback para avisar al padre cuando el dibujo cambia
+    onDrawingUpdated: (Bitmap?) -> Unit
+) {
     // 1. Estado para guardar la imagen (Bitmap) donde pintaremos
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
 
@@ -66,15 +69,13 @@ fun DrawingCanvas() {
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White)
             .onSizeChanged { size ->
-                // Creamos el Bitmap solo cuando sabemos el tamaño de la pantalla
                 if (size.width > 0 && size.height > 0) {
-                    val newBitmap = Bitmap.createBitmap(
-                        size.width,
-                        size.height,
-                        Bitmap.Config.ARGB_8888
-                    )
-                    bitmap = newBitmap
-                    androidCanvas.value = Canvas(newBitmap)
+                    // Solo creamos uno nuevo si no existe para no perder el dibujo al rotar
+                    if (bitmap == null) {
+                        val newBitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+                        bitmap = newBitmap
+                        androidCanvas.value = Canvas(newBitmap)
+                    }
                 }
             }
             .pointerInput(Unit) {
@@ -83,23 +84,19 @@ fun DrawingCanvas() {
                         lastTouchX = offset.x
                         lastTouchY = offset.y
                     },
+                    onDragEnd = {
+                        // OPTIMIZACIÓN: Solo enviamos el bitmap al padre cuando LEVANTA el dedo.
+                        // Hacerlo en cada frame (onDrag) sería muy lento.
+                        onDrawingUpdated(bitmap)
+                    },
                     onDrag = { change, _ ->
-                        // Aquí ocurre la magia de optimización
                         val currentX = change.position.x
                         val currentY = change.position.y
 
-                        // Pintamos DIRECTAMENTE en el Bitmap (no en la UI de Compose)
-                        androidCanvas.value?.drawLine(
-                            lastTouchX, lastTouchY,
-                            currentX, currentY,
-                            paint
-                        )
+                        androidCanvas.value?.drawLine(lastTouchX, lastTouchY, currentX, currentY, paint)
 
-                        // Actualizamos coordenadas
                         lastTouchX = currentX
                         lastTouchY = currentY
-
-                        // Forzamos a Compose a redibujar la imagen actualizada
                         refreshTrigger++
                     }
                 )
@@ -122,9 +119,9 @@ fun DrawingCanvas() {
         // Botón Borrar
         Button(
             onClick = {
-                // Para borrar, simplemente limpiamos el Bitmap transparente
                 androidCanvas.value?.drawColor(android.graphics.Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
-                refreshTrigger++ // Forzamos actualización visual
+                refreshTrigger++
+                onDrawingUpdated(null) // Avisamos al padre que se borró
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White.copy(alpha = 0.9f),

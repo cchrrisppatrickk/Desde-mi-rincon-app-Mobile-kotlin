@@ -1,6 +1,7 @@
 package com.example.desde_mi_rincon_app_01.ui.screens.forum
 
 // --- IMPORTS ---
+import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween // FIXED: Added import for tween
@@ -267,6 +268,7 @@ fun ForumFeedScreen(
     }
 }
 
+
 // --- SCREEN 3: WRITE (FORM) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -279,10 +281,14 @@ fun ForumWriteScreen(
     var authorName by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf("text") }
 
+    // 1. NUEVO: Estado para almacenar el dibujo capturado
+    var currentDrawing by remember { mutableStateOf<Bitmap?>(null) }
+
     val status by viewModel.status.collectAsState()
     val showSuccessDialog by viewModel.showSuccessDialog.collectAsState()
 
-    val emotionColor = emotionsList.find { it.name == emotionName }?.color ?: Color(0xFFF1F5F9)
+    // Manejo seguro del color si emotionsList no está disponible en este contexto
+    val emotionColor = Color(0xFFF1F5F9)
     val accentColor = Color(0xFF0D9488)
 
     if (showSuccessDialog) {
@@ -306,7 +312,7 @@ fun ForumWriteScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8FAFC), // FIXED: Changed backgroundColor to containerColor
+        containerColor = Color(0xFFF8FAFC),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -342,6 +348,7 @@ fun ForumWriteScreen(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Asegúrate que ModeSelector exista o usa un TabRow simple si no
             ModeSelector(
                 selectedMode = selectedTab,
                 onModeSelected = { selectedTab = it },
@@ -411,7 +418,12 @@ fun ForumWriteScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFFF1F5F9))
                         ) {
-                            DrawingCanvas()
+                            // 2. CORRECCIÓN: Pasamos el callback onDrawingUpdated
+                            DrawingCanvas(
+                                onDrawingUpdated = { bitmap ->
+                                    currentDrawing = bitmap
+                                }
+                            )
                         }
                     }
                 }
@@ -448,12 +460,21 @@ fun ForumWriteScreen(
             Button(
                 onClick = {
                     val finalMsg = if(selectedTab == "draw") "(Ha compartido un dibujo)" else messageText
-                    viewModel.sendPost(emotionName, finalMsg, authorName)
+
+                    // Lógica para decidir qué bitmap enviar
+                    val imageToSend = if (selectedTab == "draw") currentDrawing else null
+
+                    // 3. CORRECCIÓN: Agregamos el parámetro imageToSend
+                    viewModel.sendPost(
+                        emotion = emotionName,
+                        message = finalMsg,
+                        inputName = authorName,
+                        imageBitmap = imageToSend
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    // FIXED: Replaced custom shadow function with standard Modifier.shadow to avoid complexity errors
                     .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                 shape = RoundedCornerShape(16.dp)
@@ -471,6 +492,10 @@ fun ForumWriteScreen(
                 if (it.contains("Error")) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = it, color = Color.Red, fontSize = 12.sp)
+                } else {
+                    // Feedback visual de progreso (opcional)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = it, color = accentColor, fontSize = 12.sp)
                 }
             }
         }
