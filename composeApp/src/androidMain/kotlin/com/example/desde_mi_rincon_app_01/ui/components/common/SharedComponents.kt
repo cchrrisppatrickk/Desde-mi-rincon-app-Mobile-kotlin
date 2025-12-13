@@ -1,5 +1,6 @@
 package com.example.desde_mi_rincon_app_01.ui.components.common
 
+
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -33,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
 import kotlin.math.absoluteValue
+import androidx.annotation.Keep
 
+@Keep
 //@Composable
 //fun UserAvatar(
 //    name: String,

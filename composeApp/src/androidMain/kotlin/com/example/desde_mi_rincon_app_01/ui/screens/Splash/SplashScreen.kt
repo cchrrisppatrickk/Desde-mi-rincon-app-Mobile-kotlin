@@ -32,7 +32,9 @@ import coil.request.ImageRequest
 import com.example.desde_mi_rincon_app_01.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.annotation.Keep
 
+@Keep
 @Composable
 fun SplashScreen(onNavigateToHome: () -> Unit) {
 

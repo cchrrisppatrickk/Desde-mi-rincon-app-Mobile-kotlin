@@ -3,7 +3,9 @@ package com.example.desde_mi_rincon_app_01.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.* // Importar todo para facilitar
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.Keep
 
+@Keep
 sealed class AppScreen(val route: String, val title: String, val icon: ImageVector) {
 
     object Splash : AppScreen("splash_screen", "Splash", Icons.Default.Spa)

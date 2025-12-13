@@ -6,7 +6,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import androidx.annotation.Keep
 
+@Keep
 class WeeklyViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
 

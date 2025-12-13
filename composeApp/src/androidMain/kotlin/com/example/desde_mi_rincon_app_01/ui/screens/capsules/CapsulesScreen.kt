@@ -29,7 +29,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.desde_mi_rincon_app_01.data.model.VideoCapsule
 import com.example.desde_mi_rincon_app_01.ui.components.common.CapsuleSkeleton
 import com.example.desde_mi_rincon_app_01.viewmodel.CapsulesViewModel
+import androidx.annotation.Keep
 
+@Keep
 // --- PALETA DE COLORES LOCAL (Minimalista) ---
 private val TealPrimary = Color(0xFF0D9488)
 private val TextDark = Color(0xFF1E293B)

@@ -1,6 +1,8 @@
 package com.example.desde_mi_rincon_app_01.data.model
 
+import androidx.annotation.Keep
 
+@Keep
 data class ForumPost(
     val id: String = "",
     val emotion: String = "",

@@ -42,7 +42,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.annotation.Keep
 
+@Keep
 // --- COLORES TEMÁTICOS ---
 private val AmberBackground = Color(0xFFFFFBEB)
 private val AmberPrimary = Color(0xFFF59E0B)

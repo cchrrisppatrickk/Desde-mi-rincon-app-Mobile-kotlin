@@ -31,7 +31,9 @@ import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumSelectionScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.forum.ForumWriteScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.home.HomeScreen
 import com.example.desde_mi_rincon_app_01.ui.screens.weekly.WeeklyScreen
+import androidx.annotation.Keep
 
+@Keep
 @Composable
 fun App() {
     val navController = rememberNavController()

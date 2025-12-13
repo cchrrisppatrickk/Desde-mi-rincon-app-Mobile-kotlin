@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.annotation.Keep
 
+@Keep
 // Colores personalizados
 private val TealPrimary = Color(0xFF0D9488)
 private val SlateLight = Color(0xFFF8FAFC)

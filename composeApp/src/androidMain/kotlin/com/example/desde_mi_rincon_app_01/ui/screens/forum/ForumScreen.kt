@@ -58,7 +58,9 @@ import com.example.desde_mi_rincon_app_01.utils.emotionsList
 import com.example.desde_mi_rincon_app_01.utils.getEmotionColor
 import com.example.desde_mi_rincon_app_01.viewmodel.ForumViewModel
 import kotlin.math.absoluteValue
+import androidx.annotation.Keep
 
+@Keep
 
 
 

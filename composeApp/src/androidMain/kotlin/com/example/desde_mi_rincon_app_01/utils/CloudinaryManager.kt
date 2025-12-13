@@ -9,7 +9,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import androidx.annotation.Keep
 
+@Keep
 object CloudinaryManager {
 
     private const val CLOUD_NAME = "dw1mdguhu" // <--- CAMBIA ESTO

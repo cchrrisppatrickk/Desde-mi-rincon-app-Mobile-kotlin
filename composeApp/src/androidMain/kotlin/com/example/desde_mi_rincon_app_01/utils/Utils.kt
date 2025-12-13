@@ -1,5 +1,7 @@
 package com.example.desde_mi_rincon_app_01.utils
+import androidx.annotation.Keep
 
+@Keep
 fun getTimeAgo(timestamp: Long): String {
     val now = System.currentTimeMillis()
     val diff = now - timestamp

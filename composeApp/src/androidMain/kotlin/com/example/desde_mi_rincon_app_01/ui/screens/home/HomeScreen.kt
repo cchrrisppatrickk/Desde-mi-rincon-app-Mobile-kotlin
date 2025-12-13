@@ -38,7 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.desde_mi_rincon_app_01.R
 import kotlinx.coroutines.launch
+import androidx.annotation.Keep
 
+@Keep
 @Composable
 fun HomeScreen() {
     val scrollState = rememberLazyListState()

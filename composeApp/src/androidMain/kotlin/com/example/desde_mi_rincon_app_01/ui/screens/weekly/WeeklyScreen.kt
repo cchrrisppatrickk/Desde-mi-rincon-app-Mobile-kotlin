@@ -31,7 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.desde_mi_rincon_app_01.viewmodel.WeeklyViewModel
+import androidx.annotation.Keep
 
+@Keep
 // Colores específicos para esta pantalla (Atmósfera Nocturna/Íntima)
 private val DeepTeal = Color(0xFF0F172A) // Slate 900 (Casi negro)
 private val RichTeal = Color(0xFF115E59) // Teal 800

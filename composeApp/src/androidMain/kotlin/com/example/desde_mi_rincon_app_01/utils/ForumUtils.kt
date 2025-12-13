@@ -2,7 +2,9 @@ package com.example.desde_mi_rincon_app_01.utils
 
 import androidx.compose.ui.graphics.Color
 import com.example.desde_mi_rincon_app_01.data.model.EmotionItem
+import androidx.annotation.Keep
 
+@Keep
 val emotionsList = listOf(
     EmotionItem("Agotado", "😫", Color(0xFFE2E8F0)),
     EmotionItem("Esperanzado", "🌻", Color(0xFFFEF9C3)),

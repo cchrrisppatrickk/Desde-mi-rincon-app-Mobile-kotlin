@@ -6,7 +6,9 @@ import com.example.desde_mi_rincon_app_01.data.model.ForumPost
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
+import androidx.annotation.Keep
 
+@Keep
 class ForumPagingSource(
     private val query: Query
 ) : PagingSource<QuerySnapshot, ForumPost>() {

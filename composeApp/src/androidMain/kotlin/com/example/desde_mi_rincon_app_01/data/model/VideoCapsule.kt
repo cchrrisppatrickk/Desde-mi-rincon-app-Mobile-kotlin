@@ -1,5 +1,7 @@
 package com.example.desde_mi_rincon_app_01.data.model
+import androidx.annotation.Keep
 
+@Keep
 data class VideoCapsule(
     val id: String = "",
     val title: String = "",       // Ej: "Soltar para avanzar"
